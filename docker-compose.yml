@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/data/database.db
+      - ADDRESS_PROVIDER=free
+      - PHONE_PROVIDER=csv
+      - RATE_LIMIT_REQUESTS_PER_MINUTE=60
+      - SCRAPE_DELAY_MS=2000
+      - SCRAPE_CONCURRENT_LIMIT=3
+      - USER_AGENT_ROTATION=true
+      - ENABLED_COUNTIES=cobb,dekalb,fulton,fayette,newton,douglas,gwinnett
+      - CRON_SCHEDULE=0 6 * * *
+      - NEXT_PUBLIC_APP_NAME=Georgia Probate Monitor
+    volumes:
+      - app_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/cases"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  app_data:
+    driver: local

@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Case {
+  id            String   @id @default(cuid())
+  caseId        String   @unique
+  county        String
+  filingDate    DateTime
+  decedentName  String
+  decedentAddress String?
+  estateValue   Float?
+  caseNumber    String?
+  attorney      String?
+  attorneyPhone String?
+  courtUrl      String?
+  status        String   @default("active")
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  contacts Contact[]
+  parcels  Parcel[]
+  
+  @@index([county])
+  @@index([filingDate])
+}
+
+model Contact {
+  id                   String   @id @default(cuid())
+  caseId               String
+  type                 String   // executor, administrator, petitioner
+  name                 String
+  originalAddress      String?
+  standardizedAddress  String?
+  upsDeliverable       Boolean  @default(false)
+  phone                String?
+  phoneSource          String?  // csv, provider
+  phoneConfidence      Float?   @default(0)
+  email                String?
+  relationship         String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  case Case @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  
+  @@index([caseId])
+  @@index([type])
+}
+
+model Parcel {
+  id                 String    @id @default(cuid())
+  caseId             String
+  parcelId           String    @unique
+  county             String
+  situsAddress       String?
+  taxMailingAddress  String?
+  currentOwner       String?
+  lastSaleDate       DateTime?
+  assessedValue      Float?
+  legalDescription   String?
+  qpublicUrl         String?
+  matchConfidence    Float     @default(0)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  case Case @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  
+  @@index([caseId])
+  @@index([county])
+  @@index([parcelId])
+}
+
+model ScrapingJob {
+  id          String   @id @default(cuid())
+  county      String
+  source      String   // georgia_probate_records, cobb_probate
+  status      String   @default("pending") // pending, running, completed, failed
+  startedAt   DateTime?
+  completedAt DateTime?
+  recordsFound Int     @default(0)
+  errorMessage String?
+  createdAt   DateTime @default(now())
+  
+  @@index([county])
+  @@index([status])
+}
+
+model PhoneUpload {
+  id        String   @id @default(cuid())
+  filename  String
+  records   Int      @default(0)
+  uploadedAt DateTime @default(now())
+}
+
+model Settings {
+  key   String @id
+  value String
+  updatedAt DateTime @updatedAt
+}

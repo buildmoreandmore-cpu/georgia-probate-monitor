@@ -1,0 +1,20 @@
+{
+  "build": {
+    "env": {
+      "ENABLE_EXPERIMENTAL_COREPACK": "1"
+    }
+  },
+  "functions": {
+    "src/app/api/**/*.ts": {
+      "maxDuration": 300
+    }
+  },
+  "env": {
+    "DATABASE_URL": "file:./tmp/database.db",
+    "ADDRESS_PROVIDER": "free",
+    "PHONE_PROVIDER": "csv",
+    "RATE_LIMIT_REQUESTS_PER_MINUTE": "60",
+    "SCRAPE_DELAY_MS": "2000",
+    "ENABLED_COUNTIES": "cobb,dekalb,fulton"
+  }
+}

@@ -1,0 +1,94 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
+import { prisma } from '@/lib/db'
+import { rateLimiter, getClientIdentifier } from '@/lib/rate-limiter'
+import { CaseOutputSchema } from '@/lib/schemas'
+
+const GetCasesSchema = z.object({
+  county: z.string().optional(),
+  status: z.enum(['active', 'archived']).optional(),
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(20)
+})
+
+export async function GET(request: NextRequest) {
+  try {
+    // Rate limiting
+    const clientId = getClientIdentifier(request)
+    const rateLimit = await rateLimiter.checkRateLimit(clientId)
+    
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded' },
+        { status: 429, headers: { 'X-RateLimit-Remaining': '0' } }
+      )
+    }
+
+    // Parse query parameters
+    const { searchParams } = new URL(request.url)
+    const params = GetCasesSchema.parse({
+      county: searchParams.get('county'),
+      status: searchParams.get('status'),
+      dateFrom: searchParams.get('dateFrom'),
+      dateTo: searchParams.get('dateTo'),
+      page: searchParams.get('page'),
+      limit: searchParams.get('limit')
+    })
+
+    // Build where clause
+    const where: any = {}
+    if (params.county) where.county = params.county
+    if (params.status) where.status = params.status
+    if (params.dateFrom || params.dateTo) {
+      where.filingDate = {}
+      if (params.dateFrom) where.filingDate.gte = new Date(params.dateFrom)
+      if (params.dateTo) where.filingDate.lte = new Date(params.dateTo)
+    }
+
+    // Get total count
+    const total = await prisma.case.count({ where })
+
+    // Get cases with relations
+    const cases = await prisma.case.findMany({
+      where,
+      include: {
+        contacts: true,
+        parcels: true
+      },
+      orderBy: { filingDate: 'desc' },
+      skip: (params.page - 1) * params.limit,
+      take: params.limit
+    })
+
+    return NextResponse.json({
+      data: cases,
+      pagination: {
+        page: params.page,
+        limit: params.limit,
+        total,
+        totalPages: Math.ceil(total / params.limit)
+      }
+    }, {
+      headers: {
+        'X-RateLimit-Remaining': rateLimit.remaining.toString()
+      }
+    })
+
+  } catch (error) {
+    console.error('Error fetching cases:', error)
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid parameters', details: error.errors },
+        { status: 400 }
+      )
+    }
+
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
