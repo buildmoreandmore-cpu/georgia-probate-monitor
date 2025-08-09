@@ -17,6 +17,85 @@ function ensureDbDirectory() {
   }
 }
 
+// Initialize database tables if they don't exist
+async function initializeDatabase() {
+  try {
+    // This will create the tables if they don't exist using Prisma's schema
+    await prisma.$connect()
+    
+    // Try to create tables - if they exist, this will be ignored
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS "Case" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "caseNumber" TEXT NOT NULL,
+        "county" TEXT NOT NULL,
+        "filingDate" DATETIME NOT NULL,
+        "decedentName" TEXT NOT NULL,
+        "decedentAddress" TEXT,
+        "estateValue" REAL,
+        "attorney" TEXT,
+        "attorneyPhone" TEXT,
+        "courtUrl" TEXT,
+        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `
+    
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS "Contact" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "type" TEXT NOT NULL,
+        "name" TEXT NOT NULL,
+        "address" TEXT,
+        "phone" TEXT,
+        "relationship" TEXT,
+        "caseId" TEXT NOT NULL,
+        FOREIGN KEY ("caseId") REFERENCES "Case" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+      );
+    `
+    
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS "Parcel" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "parcelId" TEXT NOT NULL,
+        "county" TEXT NOT NULL,
+        "situsAddress" TEXT NOT NULL,
+        "taxMailingAddress" TEXT,
+        "currentOwner" TEXT NOT NULL,
+        "lastSaleDate" DATETIME,
+        "lastSalePrice" REAL,
+        "marketValue" REAL,
+        "taxAssessedValue" REAL,
+        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `
+
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS "PhoneRecord" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "name" TEXT NOT NULL,
+        "phone" TEXT NOT NULL,
+        "address" TEXT,
+        "uploadId" TEXT,
+        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `
+
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS "PhoneUpload" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "filename" TEXT NOT NULL,
+        "recordCount" INTEGER NOT NULL,
+        "uploadDate" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `
+  } catch (error) {
+    console.warn('Database initialization warning:', error)
+    // Continue even if there are errors - tables might already exist
+  }
+}
+
 // Initialize database directory
 ensureDbDirectory()
 
@@ -27,3 +106,5 @@ export const prisma =
   })
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+
+export { initializeDatabase }

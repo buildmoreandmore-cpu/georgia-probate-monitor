@@ -1,55 +1,63 @@
-interface RateLimitEntry {
-  count: number
-  resetTime: number
-}
+type RateLimitEntry = {
+  count: number;
+  resetTime: number; // ms epoch
+};
 
-class InMemoryRateLimiter {
-  private store = new Map<string, RateLimitEntry>()
-  private windowMs = 60 * 1000 // 1 minute
-  private maxRequests = parseInt(process.env.RATE_LIMIT_REQUESTS_PER_MINUTE || '60')
+export class RateLimiter {
+  private store: Map<string, RateLimitEntry>;
+  private maxPerMinute: number;
+  private windowMs: number;
 
-  async checkRateLimit(identifier: string): Promise<{ success: boolean; remaining: number }> {
-    const now = Date.now()
-    const windowStart = now - this.windowMs
+  constructor(maxPerMinute = parseInt(process.env.RATE_LIMIT_REQUESTS_PER_MINUTE || '60')) {
+    this.store = new Map();
+    this.maxPerMinute = maxPerMinute;
+    this.windowMs = 60_000;
+  }
 
-    // Clean up old entries
-    const entriesToDelete: string[] = []
-    this.store.forEach((entry, key) => {
-      if (entry.resetTime < now) {
-        entriesToDelete.push(key)
-      }
-    })
-    
-    entriesToDelete.forEach(key => {
-      this.store.delete(key)
-    })
+  allow(key: string) {
+    const now = Date.now();
 
-    const entry = this.store.get(identifier)
-
-    if (!entry) {
-      // First request
-      this.store.set(identifier, { count: 1, resetTime: now + this.windowMs })
-      return { success: true, remaining: this.maxRequests - 1 }
+    // --- cleanup without for..of (avoids downlevelIteration) ---
+    // collect keys to delete first to avoid mutating during iteration
+    const toDelete: string[] = [];
+    this.store.forEach((entry, k) => {
+      if (entry.resetTime < now) toDelete.push(k);
+    });
+    for (let i = 0; i < toDelete.length; i++) {
+      this.store.delete(toDelete[i]);
     }
 
-    if (entry.resetTime < now) {
-      // Window expired, reset
-      this.store.set(identifier, { count: 1, resetTime: now + this.windowMs })
-      return { success: true, remaining: this.maxRequests - 1 }
+    // --- get or init entry ---
+    const current = this.store.get(key);
+    if (!current) {
+      this.store.set(key, { count: 1, resetTime: now + this.windowMs });
+      return { allowed: true, remaining: this.maxPerMinute - 1, resetMs: this.windowMs };
     }
 
-    if (entry.count >= this.maxRequests) {
-      // Rate limit exceeded
-      return { success: false, remaining: 0 }
+    if (current.resetTime < now) {
+      // window reset
+      current.count = 1;
+      current.resetTime = now + this.windowMs;
+      this.store.set(key, current);
+      return { allowed: true, remaining: this.maxPerMinute - 1, resetMs: this.windowMs };
     }
 
-    // Increment counter
-    entry.count++
-    return { success: true, remaining: this.maxRequests - entry.count }
+    if (current.count >= this.maxPerMinute) {
+      return { allowed: false, remaining: 0, resetMs: current.resetTime - now };
+    }
+
+    current.count += 1;
+    this.store.set(key, current);
+    return { allowed: true, remaining: this.maxPerMinute - current.count, resetMs: current.resetTime - now };
+  }
+
+  // Optional helper to manually clear a key
+  reset(key: string) {
+    this.store.delete(key);
   }
 }
 
-export const rateLimiter = new InMemoryRateLimiter()
+export const rateLimiter = new RateLimiter()
 
 export function getClientIdentifier(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for')

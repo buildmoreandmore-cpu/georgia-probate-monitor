@@ -17,9 +17,9 @@ export async function GET(request: NextRequest) {
   try {
     // Rate limiting
     const clientId = getClientIdentifier(request)
-    const rateLimit = await rateLimiter.checkRateLimit(clientId)
+    const rateLimit = rateLimiter.allow(clientId)
     
-    if (!rateLimit.success) {
+    if (!rateLimit.allowed) {
       return NextResponse.json(
         { error: 'Rate limit exceeded' },
         { status: 429, headers: { 'X-RateLimit-Remaining': '0' } }
