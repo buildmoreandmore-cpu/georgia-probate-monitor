@@ -68,26 +68,45 @@ export class VercelCompatibleScraper {
       
       const html = await initialResponse.text()
       
-      // Extract ASP.NET ViewState and other required fields
-      const viewStateMatch = html.match(/name="__VIEWSTATE" value="([^"]*)"/)
-      const eventValidationMatch = html.match(/name="__EVENTVALIDATION" value="([^"]*)"/)
+      // Extract ASP.NET ViewState and other required fields - corrected selectors
+      const viewStateMatch = html.match(/id="__VIEWSTATE" value="([^"]*)"/)
+      const eventValidationMatch = html.match(/id="__EVENTVALIDATION" value="([^"]*)"/)
+      const viewStateGeneratorMatch = html.match(/id="__VIEWSTATEGENERATOR" value="([^"]*)"/)
       
       if (!viewStateMatch || !eventValidationMatch) {
         throw new Error('Could not extract required form data from page')
       }
       
-      // Prepare form data for search
+      console.log('Extracted form tokens successfully')
+      
+      // Prepare form data for search - corrected field names
       const formData = new URLSearchParams()
       formData.append('__VIEWSTATE', viewStateMatch[1])
       formData.append('__EVENTVALIDATION', eventValidationMatch[1])
-      formData.append('ctl00$ContentPlaceHolder1$btnSearch', 'Search')
+      if (viewStateGeneratorMatch) {
+        formData.append('__VIEWSTATEGENERATOR', viewStateGeneratorMatch[1])
+      }
       
+      // Add search fields with correct naming
+      formData.append('ctl00$cpMain$ddlCounty', '') // All counties
+      formData.append('ctl00$cpMain$txtFirstName', '')
+      formData.append('ctl00$cpMain$txtLastName', '')
+      formData.append('ctl00$cpMain$txtFromDate', '') 
+      formData.append('ctl00$cpMain$txtToDate', '')
+      
+      // Set date range for recent cases
       if (dateFrom) {
-        formData.append('ctl00$ContentPlaceHolder1$txtFromDate', this.formatDate(dateFrom))
+        formData.append('ctl00$cpMain$txtFiledFromDate', this.formatDate(dateFrom))
+      } else {
+        formData.append('ctl00$cpMain$txtFiledFromDate', '01/01/2024') // Default to recent cases
       }
       if (dateTo) {
-        formData.append('ctl00$ContentPlaceHolder1$txtToDate', this.formatDate(dateTo))
+        formData.append('ctl00$cpMain$txtFiledToDate', this.formatDate(dateTo))
+      } else {
+        formData.append('ctl00$cpMain$txtFiledToDate', '')
       }
+      
+      formData.append('ctl00$cpMain$btnSearch', 'Search')
       
       // Submit the search
       const searchResponse = await fetch(baseUrl, {
@@ -108,10 +127,24 @@ export class VercelCompatibleScraper {
       
       // Simple regex-based parsing since Cheerio has compatibility issues
       console.log('Attempting to parse HTML response...')
+      console.log('Response length:', searchHtml.length)
+      console.log('Response preview:', searchHtml.substring(0, 500))
       
-      // Look for table rows with estate data
-      // This is a basic approach - in production you'd want more robust parsing
-      const tableMatches = searchHtml.match(/<tr[^>]*>.*?<\/tr>/gi)
+      // Look for the specific results table - the site might use RadGrid
+      // Check for different possible table patterns
+      const tableMatches = searchHtml.match(/<tr[^>]*>.*?<\/tr>/gi) || []
+      const radGridMatches = searchHtml.match(/RadGrid[^>]*>/gi) || []
+      const resultMatches = searchHtml.match(/result[^>]*>/gi) || []
+      
+      console.log('Table matches found:', tableMatches.length)
+      console.log('RadGrid matches found:', radGridMatches.length) 
+      console.log('Result matches found:', resultMatches.length)
+      
+      // Check if we have a "no results" message
+      if (searchHtml.includes('No records') || searchHtml.includes('no results') || searchHtml.includes('0 records')) {
+        console.log('No records found message detected')
+        return cases
+      }
       
       if (tableMatches && tableMatches.length > 1) { // Skip header row
         console.log(`Found ${tableMatches.length - 1} potential data rows`)

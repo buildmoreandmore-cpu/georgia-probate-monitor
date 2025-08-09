@@ -2,7 +2,7 @@ import { Page } from 'playwright'
 import { BaseScraper, ScrapedCase, ScrapedContact } from './base-scraper'
 
 export class CobbProbateScraper extends BaseScraper {
-  private baseUrl = 'https://probateonline.cobbcounty.org/BenchmarkWeb/Home.aspx/Search'
+  private baseUrl = 'https://probateonline.cobbcounty.gov/BenchmarkWeb/Home.aspx/Search'
 
   async scrape(dateFrom?: Date, dateTo?: Date): Promise<ScrapedCase[]> {
     const page = await this.createPage()
