@@ -276,7 +276,7 @@ export default function SettingsPage() {
             
             <div className="text-sm text-muted-foreground">
               <p className="mb-2"><strong>CSV Format:</strong> name,phone,address (address column optional)</p>
-              <p className="mb-2">Example: "John Doe","(555) 123-4567","123 Main St, Atlanta, GA"</p>
+              <p className="mb-2">Example: &quot;John Doe&quot;,&quot;(555) 123-4567&quot;,&quot;123 Main St, Atlanta, GA&quot;</p>
               <p>Current database contains <strong>{currentDataSize}</strong> phone records</p>
             </div>
 

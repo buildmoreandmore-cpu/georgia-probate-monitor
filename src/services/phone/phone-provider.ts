@@ -47,7 +47,7 @@ export class CSVPhoneProvider implements PhoneProvider {
     const normalizedName = this.normalizeName(name)
     
     // Try exact match first
-    let result = this.phoneData.get(normalizedName)
+    const result = this.phoneData.get(normalizedName)
     if (result) {
       return result
     }

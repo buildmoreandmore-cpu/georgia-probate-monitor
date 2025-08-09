@@ -34,6 +34,9 @@ export default function RootLayout({
                   <a className="transition-colors hover:text-foreground/80 text-foreground/60" href="/settings">
                     Settings
                   </a>
+                  <a className="transition-colors hover:text-foreground/80 text-foreground/60" href="/admin">
+                    Admin
+                  </a>
                 </nav>
               </div>
             </div>

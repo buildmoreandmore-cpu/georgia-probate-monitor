@@ -10,7 +10,7 @@
     }
   },
   "env": {
-    "DATABASE_URL": "file:/tmp/database.db",
+    "DATABASE_URL": "file:./tmp/database.db",
     "ADDRESS_PROVIDER": "free",
     "PHONE_PROVIDER": "csv",
     "RATE_LIMIT_REQUESTS_PER_MINUTE": "60",

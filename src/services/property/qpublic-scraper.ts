@@ -1,5 +1,5 @@
 import { Page } from 'playwright'
-import { BaseScraper } from '../scrapers/base-scraper'
+import { BaseScraper, ScrapedCase } from '../scrapers/base-scraper'
 
 export interface PropertyRecord {
   parcelId: string
@@ -24,7 +24,7 @@ export class QPublicScraper extends BaseScraper {
     gwinnett: 'https://qpublic.schneidercorp.com/Application.aspx?AppID=1282&LayerID=43872&PageID=16058'
   }
 
-  async scrape(): Promise<PropertyRecord[]> {
+  async scrape(dateFrom?: Date, dateTo?: Date): Promise<ScrapedCase[]> {
     throw new Error('Use searchByOwner or searchByAddress instead')
   }
 

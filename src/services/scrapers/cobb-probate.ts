@@ -58,7 +58,7 @@ export class CobbProbateScraper extends BaseScraper {
           const caseLink = await cells[0].$('a')
           const caseDetailUrl = await caseLink?.getAttribute('href')
           
-          const { contacts, attorney, estateValue, decedentAddress } = await this.extractCaseDetails(page, caseDetailUrl)
+          const { contacts, attorney, estateValue, decedentAddress } = await this.extractCaseDetails(page, caseDetailUrl || undefined)
 
           const scrapedCase: ScrapedCase = {
             caseId: caseNumber.trim(),

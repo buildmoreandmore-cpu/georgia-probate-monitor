@@ -13,11 +13,16 @@ class InMemoryRateLimiter {
     const windowStart = now - this.windowMs
 
     // Clean up old entries
-    for (const [key, entry] of this.store.entries()) {
+    const entriesToDelete: string[] = []
+    this.store.forEach((entry, key) => {
       if (entry.resetTime < now) {
-        this.store.delete(key)
+        entriesToDelete.push(key)
       }
-    }
+    })
+    
+    entriesToDelete.forEach(key => {
+      this.store.delete(key)
+    })
 
     const entry = this.store.get(identifier)
 

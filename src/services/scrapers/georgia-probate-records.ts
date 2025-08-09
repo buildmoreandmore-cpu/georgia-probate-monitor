@@ -47,7 +47,7 @@ export class GeorgiaProbateRecordsScraper extends BaseScraper {
           const caseLink = await cells[0].$('a')
           const caseUrl = await caseLink?.getAttribute('href')
 
-          const contacts = await this.extractContacts(page, caseUrl)
+          const contacts = await this.extractContacts(page, caseUrl || undefined)
 
           const scrapedCase: ScrapedCase = {
             caseId: caseNumber.trim(),
