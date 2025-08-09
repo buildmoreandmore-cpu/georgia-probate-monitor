@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createVercelScraper } from '@/services/scrapers/vercel-compatible-scraper'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 // Debug endpoint without rate limiting
 export async function GET(request: NextRequest) {
   try {
