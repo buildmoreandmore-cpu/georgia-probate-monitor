@@ -4,6 +4,9 @@ import { prisma } from '@/lib/prisma'
 import { rateLimiter, getClientIdentifier } from '@/lib/rate-limiter'
 import { SettingsSchema } from '@/lib/schemas'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 const UpdateSettingsSchema = z.record(z.string(), z.any())
 
 export async function GET(request: NextRequest) {

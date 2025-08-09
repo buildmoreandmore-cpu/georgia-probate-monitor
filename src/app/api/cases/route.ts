@@ -4,6 +4,9 @@ import { prisma } from '@/lib/prisma'
 import { rateLimiter, getClientIdentifier } from '@/lib/rate-limiter'
 import { CaseOutputSchema } from '@/lib/schemas'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 const GetCasesSchema = z.object({
   county: z.string().optional(),
   status: z.enum(['active', 'archived']).optional(),

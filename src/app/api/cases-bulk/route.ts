@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 const ContactSchema = z.object({
   type: z.enum(['executor', 'administrator', 'petitioner']),
