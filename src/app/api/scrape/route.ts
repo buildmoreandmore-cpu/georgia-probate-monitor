@@ -87,8 +87,14 @@ export async function POST(request: NextRequest) {
 
               if (existing) continue
 
-              // Match properties and enrich contacts
-              const matchResult = await matcher.processCase(scrapedCase)
+              // Match properties and enrich contacts (this might fail in Vercel)
+              let matchResult: any = null
+              try {
+                matchResult = await matcher.processCase(scrapedCase)
+              } catch (matchError) {
+                console.warn('Data matching failed, proceeding with basic case data:', matchError)
+                matchResult = { properties: [], enrichedContacts: scrapedCase.contacts || [] }
+              }
 
               // Save case
               const savedCase = await prisma.case.create({
@@ -106,8 +112,9 @@ export async function POST(request: NextRequest) {
                 }
               })
 
-              // Save contacts
-              for (const contact of matchResult.enrichedContacts) {
+              // Save contacts (use enriched contacts if available)
+              const contactsToSave = matchResult.enrichedContacts || scrapedCase.contacts || []
+              for (const contact of contactsToSave) {
                 await prisma.contact.create({
                   data: {
                     caseId: savedCase.id,
@@ -118,28 +125,31 @@ export async function POST(request: NextRequest) {
                     upsDeliverable: contact.upsDeliverable || false,
                     phone: contact.phone,
                     phoneSource: contact.phoneSource,
-                    phoneConfidence: contact.phoneConfidence
+                    phoneConfidence: contact.phoneConfidence,
+                    relationship: contact.relationship
                   }
                 })
               }
 
-              // Save parcels
-              for (const property of matchResult.properties) {
-                await prisma.parcel.create({
-                  data: {
-                    caseId: savedCase.id,
-                    parcelId: property.parcelId,
-                    county: property.county,
-                    situsAddress: property.situsAddress,
-                    taxMailingAddress: property.taxMailingAddress,
-                    currentOwner: property.currentOwner,
-                    lastSaleDate: property.lastSaleDate,
-                    assessedValue: property.assessedValue,
-                    legalDescription: property.legalDescription,
-                    qpublicUrl: property.qpublicUrl,
-                    matchConfidence: property.matchConfidence
-                  }
-                })
+              // Save parcels if matcher found any
+              if (matchResult && matchResult.properties) {
+                for (const property of matchResult.properties) {
+                  await prisma.parcel.create({
+                    data: {
+                      caseId: savedCase.id,
+                      parcelId: property.parcelId,
+                      county: property.county,
+                      situsAddress: property.situsAddress,
+                      taxMailingAddress: property.taxMailingAddress,
+                      currentOwner: property.currentOwner,
+                      lastSaleDate: property.lastSaleDate,
+                      assessedValue: property.assessedValue,
+                      legalDescription: property.legalDescription,
+                      qpublicUrl: property.qpublicUrl,
+                      matchConfidence: property.matchConfidence
+                    }
+                  })
+                }
               }
 
               savedCount++

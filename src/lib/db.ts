@@ -90,6 +90,28 @@ async function initializeDatabase() {
         "uploadDate" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
     `
+
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS "ScrapingJob" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "county" TEXT NOT NULL,
+        "source" TEXT NOT NULL,
+        "status" TEXT NOT NULL DEFAULT 'pending',
+        "startedAt" DATETIME,
+        "completedAt" DATETIME,
+        "recordsFound" INTEGER NOT NULL DEFAULT 0,
+        "errorMessage" TEXT,
+        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `
+
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS "Settings" (
+        "key" TEXT NOT NULL PRIMARY KEY,
+        "value" TEXT NOT NULL,
+        "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `
   } catch (error) {
     console.warn('Database initialization warning:', error)
     // Continue even if there are errors - tables might already exist
