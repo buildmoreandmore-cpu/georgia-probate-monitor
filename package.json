@@ -1,6 +1,6 @@
 {
   "name": "georgia-probate-monitor",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "packageManager": "npm@10.0.0",
   "scripts": {
