@@ -1,0 +1,26 @@
+{
+  "name": "georgia-probate-scraper",
+  "version": "1.0.0", 
+  "description": "Local Playwright scraper for Georgia probate records",
+  "main": "scrape-runner.ts",
+  "scripts": {
+    "scrape": "tsx scrape-runner.ts",
+    "scrape:georgia": "tsx scrape-runner.ts georgia_probate_records",
+    "scrape:cobb": "tsx scrape-runner.ts cobb_probate",
+    "scrape:all": "tsx scrape-runner.ts georgia_probate_records cobb_probate",
+    "install-deps": "npm install playwright tsx dotenv node-fetch @types/node"
+  },
+  "dependencies": {
+    "playwright": "^1.40.1",
+    "tsx": "^4.6.2", 
+    "dotenv": "^16.3.1",
+    "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/node-fetch": "^2.6.7"
+  },
+  "bin": {
+    "scrape": "./scrape-runner.ts"
+  }
+}
