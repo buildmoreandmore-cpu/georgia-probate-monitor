@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createVercelScraper } from '@/services/scrapers/vercel-compatible-scraper'
+import { VercelCompatibleScraper } from '@/services/scrapers/vercel-compatible-scraper'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -9,14 +9,8 @@ export async function GET(request: NextRequest) {
   try {
     console.log('Starting debug scraper test...')
     
-    const scraper = createVercelScraper()
-    if (!scraper) {
-      return NextResponse.json({
-        error: 'Scraper not available - not in Vercel environment',
-        vercel: !!process.env.VERCEL,
-        environment: process.env.NODE_ENV
-      })
-    }
+    // Always create scraper for debugging
+    const scraper = new VercelCompatibleScraper()
 
     console.log('Scraper created, attempting to scrape...')
     
