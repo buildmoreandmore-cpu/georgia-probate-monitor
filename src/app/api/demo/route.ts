@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { prisma } from '@/lib/prisma'
 import { rateLimiter, getClientIdentifier } from '@/lib/rate-limiter'
 
 export async function POST(request: NextRequest) {

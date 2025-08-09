@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma, initializeDatabase } from '@/lib/db'
+import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   try {
-    // Initialize database tables on first access
-    await initializeDatabase()
-    
     // Test database connection
     const caseCount = await prisma.case.count()
     

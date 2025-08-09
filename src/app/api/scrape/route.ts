@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { prisma } from '@/lib/db'
+import { prisma } from '@/lib/prisma'
 import { rateLimiter, getClientIdentifier } from '@/lib/rate-limiter'
 import { GeorgiaProbateRecordsScraper } from '@/services/scrapers/georgia-probate-records'
 import { CobbProbateScraper } from '@/services/scrapers/cobb-probate'
