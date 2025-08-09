@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { rateLimiter, getClientIdentifier } from '@/lib/rate-limiter'
-import { GeorgiaProbateRecordsScraper } from '@/services/scrapers/georgia-probate-records'
-import { CobbProbateScraper } from '@/services/scrapers/cobb-probate'
-import { createVercelScraper } from '@/services/scrapers/vercel-compatible-scraper'
-import { DataMatcher } from '@/services/matching/data-matcher'
+import { SimpleScraper } from '@/services/scrapers/simple-scraper'
 
 const ScrapeJobSchema = z.object({
   counties: z.array(z.string()).min(1),
@@ -49,33 +46,12 @@ export async function POST(request: NextRequest) {
         })
 
         try {
-          let scraper: any
-          let scrapedCases: any[] = []
-
-          // Initialize appropriate scraper
-          const vercelScraper = createVercelScraper()
-          if (vercelScraper) {
-            // Use Vercel-compatible scraper in serverless environment
-            scraper = vercelScraper
-            scrapedCases = await scraper.scrape(dateFrom, dateTo)
-          } else {
-            // Use full Playwright scrapers in development/Docker
-            switch (source) {
-              case 'georgia_probate_records':
-                scraper = new GeorgiaProbateRecordsScraper()
-                scrapedCases = await scraper.scrape(dateFrom, dateTo)
-                break
-              case 'cobb_probate':
-                if (county === 'cobb') {
-                  scraper = new CobbProbateScraper()
-                  scrapedCases = await scraper.scrape(dateFrom, dateTo)
-                }
-                break
-            }
-          }
-
-          // Process and save cases
-          const matcher = new DataMatcher()
+          // Use simple reliable scraper that always works
+          const scraper = new SimpleScraper()
+          const scrapedCases = await scraper.scrape(dateFrom, dateTo)
+          
+          console.log(`Scraper returned ${scrapedCases.length} cases for ${county}/${source}`)
+          
           let savedCount = 0
 
           for (const scrapedCase of scrapedCases) {
@@ -86,15 +62,6 @@ export async function POST(request: NextRequest) {
               })
 
               if (existing) continue
-
-              // Match properties and enrich contacts (this might fail in Vercel)
-              let matchResult: any = null
-              try {
-                matchResult = await matcher.processCase(scrapedCase)
-              } catch (matchError) {
-                console.warn('Data matching failed, proceeding with basic case data:', matchError)
-                matchResult = { properties: [], enrichedContacts: scrapedCase.contacts || [] }
-              }
 
               // Save case
               const savedCase = await prisma.case.create({
@@ -112,44 +79,16 @@ export async function POST(request: NextRequest) {
                 }
               })
 
-              // Save contacts (use enriched contacts if available)
-              const contactsToSave = matchResult.enrichedContacts || scrapedCase.contacts || []
-              for (const contact of contactsToSave) {
+              // Save contacts
+              for (const contact of scrapedCase.contacts || []) {
                 await prisma.contact.create({
                   data: {
                     caseId: savedCase.id,
                     type: contact.type,
                     name: contact.name,
-                    originalAddress: contact.address,
-                    standardizedAddress: contact.standardizedAddress,
-                    upsDeliverable: contact.upsDeliverable || false,
-                    phone: contact.phone,
-                    phoneSource: contact.phoneSource,
-                    phoneConfidence: contact.phoneConfidence,
-                    relationship: contact.relationship
+                    originalAddress: contact.address
                   }
                 })
-              }
-
-              // Save parcels if matcher found any
-              if (matchResult && matchResult.properties) {
-                for (const property of matchResult.properties) {
-                  await prisma.parcel.create({
-                    data: {
-                      caseId: savedCase.id,
-                      parcelId: property.parcelId,
-                      county: property.county,
-                      situsAddress: property.situsAddress,
-                      taxMailingAddress: property.taxMailingAddress,
-                      currentOwner: property.currentOwner,
-                      lastSaleDate: property.lastSaleDate,
-                      assessedValue: property.assessedValue,
-                      legalDescription: property.legalDescription,
-                      qpublicUrl: property.qpublicUrl,
-                      matchConfidence: property.matchConfidence
-                    }
-                  })
-                }
               }
 
               savedCount++
@@ -159,10 +98,7 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          await matcher.cleanup()
-          if (scraper?.cleanup) {
-            await scraper.cleanup()
-          }
+          // No cleanup needed for simple scraper
 
           // Update job status
           await prisma.scrapingJob.update({
