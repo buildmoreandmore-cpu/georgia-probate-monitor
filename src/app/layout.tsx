@@ -5,8 +5,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Georgia Probate Monitor',
-  description: 'Production-ready web app for monitoring Georgia probate filings',
+  title: 'Georgia Probate Monitor v2.0',
+  description: 'Production-ready web app for monitoring Georgia probate filings with PostgreSQL',
 }
 
 export default function RootLayout({
