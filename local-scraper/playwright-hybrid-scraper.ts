@@ -442,7 +442,7 @@ export class HybridPlaywrightScraper {
 
   private async uploadCasesToVercel(cases: ScrapedCase[]): Promise<void> {
     try {
-      const response = await fetch(`${this.vercelApiUrl}/api/cases-bulk`, {
+      const response = await fetch(`${this.vercelApiUrl}/api/test-upload`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
