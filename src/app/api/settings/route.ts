@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { rateLimiter, getClientIdentifier } from '@/lib/rate-limiter'
-import { SettingsSchema } from '@/lib/schemas'
+// Removed unused SettingsSchema import
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'

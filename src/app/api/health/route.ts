@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Skip database operations during build
     if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL) {
