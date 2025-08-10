@@ -1,20 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PlaywrightScraper } from '@/services/scrapers/playwright-scraper'
 import { prisma } from '@/lib/prisma'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
-  const scraper = new PlaywrightScraper()
+  // Skip only during build time, not runtime
+  if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL && !process.env.VERCEL_ENV) {
+    return NextResponse.json({
+      success: false,
+      message: 'Not available during build',
+      error: 'Service unavailable during build process'
+    }, { status: 503 })
+  }
+  
+  // Use HTTP scraper for reliable serverless operation
+  const { HttpScraper } = await import('@/services/scrapers/http-scraper')
+  const scraper = new HttpScraper()
   
   try {
     const body = await request.json()
     const { sites = ['georgia_probate_records'], dateFrom } = body
     
-    console.log('Starting Playwright scraping for sites:', sites)
-    
-    await scraper.initialize()
+    console.log('Starting HTTP scraping for sites:', sites)
     
     const allCases = []
     
@@ -41,7 +49,9 @@ export async function POST(request: NextRequest) {
             )
             break
           case 'cobb_probate':
-            scrapedCases = await scraper.scrapeCobb()
+            scrapedCases = await scraper.scrapeCobbProbate(
+              dateFrom ? new Date(dateFrom) : undefined
+            )
             break
           default:
             console.warn(`Unknown site: ${site}`)
@@ -69,8 +79,10 @@ export async function POST(request: NextRequest) {
                 county: scrapedCase.county,
                 filingDate: scrapedCase.filingDate,
                 decedentName: scrapedCase.decedentName,
+                decedentAddress: scrapedCase.decedentAddress,
+                estateValue: scrapedCase.estateValue,
                 caseNumber: scrapedCase.caseNumber,
-                attorney: scrapedCase.executor || scrapedCase.administrator,
+                attorney: scrapedCase.attorney,
                 courtUrl: scrapedCase.courtUrl
               }
             })
@@ -106,22 +118,6 @@ export async function POST(request: NextRequest) {
               })
             }
 
-            // Save properties
-            for (const property of scrapedCase.properties) {
-              await prisma.parcel.create({
-                data: {
-                  caseId: savedCase.id,
-                  parcelId: property.parcelId,
-                  county: scrapedCase.county,
-                  situsAddress: property.situsAddress,
-                  taxMailingAddress: property.taxMailingAddress,
-                  currentOwner: property.currentOwner,
-                  qpublicUrl: property.qpublicUrl,
-                  matchConfidence: 1.0 // High confidence for direct scraping
-                }
-              })
-            }
-
             savedCount++
           } catch (caseError) {
             console.error('Error saving case:', caseError)
@@ -147,9 +143,8 @@ export async function POST(request: NextRequest) {
             caseNumber: c.caseNumber,
             decedentName: c.decedentName,
             filingDate: c.filingDate,
-            propertiesCount: c.properties.length,
-            rawHtmlPath: c.rawHtmlPath,
-            rawPdfPath: c.rawPdfPath
+            estateValue: c.estateValue,
+            county: c.county
           }))
         })
 
@@ -175,26 +170,32 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Playwright scraping completed',
+      message: 'HTTP scraping completed',
       results: allCases,
       timestamp: new Date().toISOString()
     })
 
   } catch (error) {
-    console.error('Playwright scraping failed:', error)
+    console.error('HTTP scraping failed:', error)
     
     return NextResponse.json({
       success: false,
-      message: 'Playwright scraping failed',
+      message: 'HTTP scraping failed',
       error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
-    
-  } finally {
-    await scraper.cleanup()
   }
 }
 
 export async function GET() {
+  // Skip only during build time, not runtime
+  if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL && !process.env.VERCEL_ENV) {
+    return NextResponse.json({
+      success: false,
+      message: 'Not available during build',
+      error: 'Service unavailable during build process'
+    }, { status: 503 })
+  }
+  
   return NextResponse.json({
     message: 'Playwright scraper endpoint',
     usage: 'POST with { "sites": ["georgia_probate_records", "cobb_probate"], "dateFrom": "2024-01-01" }',

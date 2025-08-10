@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma'
 import { rateLimiter, getClientIdentifier } from '@/lib/rate-limiter'
 import { SimpleScraper } from '@/services/scrapers/simple-scraper'
 
+export const dynamic = 'force-dynamic'
+
 const ScrapeJobSchema = z.object({
   counties: z.array(z.string()).min(1),
   dateFrom: z.string().optional(),
@@ -74,7 +76,6 @@ export async function POST(request: NextRequest) {
                   estateValue: scrapedCase.estateValue,
                   caseNumber: scrapedCase.caseNumber,
                   attorney: scrapedCase.attorney,
-                  attorneyPhone: scrapedCase.attorneyPhone,
                   courtUrl: scrapedCase.courtUrl
                 }
               })

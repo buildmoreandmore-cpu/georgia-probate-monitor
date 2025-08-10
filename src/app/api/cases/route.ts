@@ -18,6 +18,19 @@ const GetCasesSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
+    // Skip database operations during build
+    if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL) {
+      return NextResponse.json({
+        data: [],
+        pagination: {
+          page: 1,
+          limit: 20,
+          total: 0,
+          totalPages: 0
+        }
+      })
+    }
+
     // Rate limiting
     const clientId = getClientIdentifier(request)
     const rateLimit = rateLimiter.allow(clientId)

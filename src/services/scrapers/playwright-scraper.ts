@@ -30,8 +30,20 @@ export class PlaywrightScraper {
   private storageDir = './storage/scraped-data'
 
   constructor() {
+    // Skip filesystem operations during build time or when database isn't available
+    if ((process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL) || 
+        (process.env.NODE_ENV === 'production' && typeof window === 'undefined' && !process.env.VERCEL_ENV)) {
+      console.log('Skipping storage directory creation - build time or no database')
+      return
+    }
+    
     // Ensure storage directory exists
-    mkdirSync(this.storageDir, { recursive: true })
+    try {
+      mkdirSync(this.storageDir, { recursive: true })
+      console.log(`Storage directory created: ${this.storageDir}`)
+    } catch (error) {
+      console.warn('Failed to create storage directory:', error)
+    }
   }
 
   async initialize(): Promise<void> {

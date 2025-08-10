@@ -6,6 +6,17 @@ export const runtime = 'nodejs'
 
 export async function GET(request: NextRequest) {
   try {
+    // Skip database operations during build
+    if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL) {
+      return NextResponse.json({
+        status: 'build-time',
+        timestamp: new Date().toISOString(),
+        database: 'skipped-during-build',
+        environment: process.env.NODE_ENV,
+        deployment: process.env.VERCEL ? 'vercel' : 'local'
+      })
+    }
+
     // Test database connection
     const caseCount = await prisma.case.count()
     

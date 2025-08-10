@@ -12,10 +12,10 @@ export async function GET(request: NextRequest) {
       success: true,
       timestamp: new Date().toISOString(),
       environment: {
-        DATABASE: process.env.DATABASE ? 'set' : 'not set',
-        DATABASE_PREFIX: process.env.DATABASE ? process.env.DATABASE.substring(0, 25) + '...' : 'none',
-        DIRECT: process.env.DIRECT ? 'set' : 'not set',
-        DIRECT_PREFIX: process.env.DIRECT ? process.env.DIRECT.substring(0, 25) + '...' : 'none',
+        DATABASE_URL: process.env.DATABASE_URL ? 'set' : 'not set',
+        DATABASE_URL_PREFIX: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 25) + '...' : 'none',
+        DIRECT_URL: process.env.DIRECT_URL ? 'set' : 'not set',
+        DIRECT_URL_PREFIX: process.env.DIRECT_URL ? process.env.DIRECT_URL.substring(0, 25) + '...' : 'none',
         NODE_ENV: process.env.NODE_ENV,
         VERCEL: process.env.VERCEL,
         VERCEL_ENV: process.env.VERCEL_ENV
