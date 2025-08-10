@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
               for (const contact of scrapedCase.contacts || []) {
                 await prisma.contact.create({
                   data: {
-                    caseId: savedCase.id,
+                    caseId: (savedCase as any).id,
                     type: contact.type,
                     name: contact.name,
                     originalAddress: contact.address
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
 
           // Update job status
           await prisma.scrapingJob.update({
-            where: { id: job.id },
+            where: { id: (job as any).id },
             data: {
               status: 'completed',
               completedAt: new Date(),
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
 
           // Update job with error
           await prisma.scrapingJob.update({
-            where: { id: job.id },
+            where: { id: (job as any).id },
             data: {
               status: 'failed',
               completedAt: new Date(),

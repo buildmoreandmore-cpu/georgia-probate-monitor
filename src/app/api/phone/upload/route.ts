@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       message: 'Phone data uploaded successfully',
       recordsLoaded,
-      uploadId: upload.id
+      uploadId: (upload as any).id
     })
 
   } catch (error) {

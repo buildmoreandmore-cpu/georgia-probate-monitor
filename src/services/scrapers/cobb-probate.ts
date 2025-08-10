@@ -43,7 +43,7 @@ export class CobbProbateScraper extends BaseScraper {
           const caseType = await cells[1].textContent() || ''
           const filingDateStr = await cells[2].textContent() || ''
           const parties = await cells[3].textContent() || ''
-          const status = await cells[4].textContent() || ''
+          const _status = await cells[4].textContent() || ''
 
           // Skip non-estate cases
           if (!caseType.includes('EST') && !caseType.includes('ADM')) continue

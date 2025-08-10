@@ -109,7 +109,7 @@ export class HttpScraper {
     return cases
   }
   
-  async scrapeCobbProbate(dateFrom?: Date): Promise<ScrapedCase[]> {
+  async scrapeCobbProbate(_dateFrom?: Date): Promise<ScrapedCase[]> {
     console.log('Starting HTTP-based scraping for Cobb Probate...')
     
     // Similar implementation for Cobb County

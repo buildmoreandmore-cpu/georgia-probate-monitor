@@ -67,7 +67,17 @@ export const listCases = cache(async (params: ListCasesParams = {}) => {
   ])
 
   return {
-    data: cases,
+    data: cases.map((case_: any) => ({
+      ...case_,
+      filingDate: case_.filingDate.toISOString(),
+      decedentAddress: case_.decedentAddress || undefined,
+      estateValue: case_.estateValue || undefined,
+      caseNumber: case_.caseNumber || undefined,
+      attorney: case_.attorney || undefined,
+      attorneyPhone: case_.attorneyPhone || undefined,
+      courtUrl: case_.courtUrl || undefined,
+      notes: case_.notes || undefined
+    })) as CaseData[],
     pagination: {
       page,
       limit,

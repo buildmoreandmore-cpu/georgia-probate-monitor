@@ -40,9 +40,9 @@ export async function GET() {
           message: 'Scraping and database save successful',
           scrapedCount: cases.length,
           savedCase: {
-            id: savedCase.id,
-            caseNumber: savedCase.caseNumber,
-            decedentName: savedCase.decedentName
+            id: (savedCase as any).id,
+            caseNumber: (savedCase as any).caseNumber,
+            decedentName: (savedCase as any).decedentName
           },
           allCases: cases.map(c => ({
             caseId: c.caseId,

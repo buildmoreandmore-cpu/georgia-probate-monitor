@@ -6,8 +6,6 @@ export const dynamic = 'force-dynamic'
 // Debug endpoint for environment variables
 export async function GET(_request: NextRequest) {
   try {
-    const _databaseUrl = process.env.DATABASE_URL
-    
     return NextResponse.json({
       success: true,
       timestamp: new Date().toISOString(),

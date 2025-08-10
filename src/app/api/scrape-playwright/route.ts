@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
             if (scrapedCase.petitioner) {
               await prisma.contact.create({
                 data: {
-                  caseId: savedCase.id,
+                  caseId: (savedCase as any).id,
                   type: 'petitioner',
                   name: scrapedCase.petitioner
                 }
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
             if (scrapedCase.executor) {
               await prisma.contact.create({
                 data: {
-                  caseId: savedCase.id,
+                  caseId: (savedCase as any).id,
                   type: 'executor', 
                   name: scrapedCase.executor
                 }
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
             if (scrapedCase.administrator) {
               await prisma.contact.create({
                 data: {
-                  caseId: savedCase.id,
+                  caseId: (savedCase as any).id,
                   type: 'administrator',
                   name: scrapedCase.administrator
                 }
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
 
         // Update job status
         await prisma.scrapingJob.update({
-          where: { id: job.id },
+          where: { id: (job as any).id },
           data: {
             status: 'completed',
             completedAt: new Date(),
@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
         
         // Update job with error
         await prisma.scrapingJob.update({
-          where: { id: job.id },
+          where: { id: (job as any).id },
           data: {
             status: 'failed',
             completedAt: new Date(),

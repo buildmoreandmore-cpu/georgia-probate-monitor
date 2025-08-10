@@ -1,5 +1,5 @@
 // Vercel-compatible scraper using fetch instead of browser automation
-import { ScrapedCase, ScrapedContact } from './base-scraper'
+import { ScrapedCase } from './base-scraper'
 
 export class VercelCompatibleScraper {
   async scrape(dateFrom?: Date, dateTo?: Date): Promise<ScrapedCase[]> {

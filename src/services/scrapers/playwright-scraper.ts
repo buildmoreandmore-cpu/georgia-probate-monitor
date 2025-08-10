@@ -125,7 +125,7 @@ export class PlaywrightScraper {
           // Extract basic info from row
           const caseNumber = await cells[0].textContent() || ''
           const decedentName = await cells[1].textContent() || ''
-          const filingDateStr = await cells[2].textContent() || ''
+          const _filingDateStr = await cells[2].textContent() || ''
 
           if (!caseNumber.trim() || !decedentName.trim()) continue
 
@@ -220,7 +220,7 @@ export class PlaywrightScraper {
       '[class*="filing"]'
     ])
 
-    const filingDate = this.parseDate(filingDateText) || new Date()
+    const filingDate = this.parseDate(filingDateText || '') || new Date()
 
     // Look for property/parcel information
     const properties = await this.extractProperties(page)

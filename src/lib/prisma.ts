@@ -4,13 +4,14 @@ const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient }
 
 // Create a mock Prisma client for build time
 const createMockPrisma = () => {
-  const mockOperation = () => Promise.resolve([])
   const mockCount = () => Promise.resolve(0)
   const mockFindMany = () => Promise.resolve([])
   const mockFindUnique = () => Promise.resolve(null)
   const mockCreate = () => Promise.resolve({})
   const mockUpdate = () => Promise.resolve({})
   const mockDelete = () => Promise.resolve({})
+  const mockDeleteMany = () => Promise.resolve({ count: 0 })
+  const mockUpsert = () => Promise.resolve({})
 
   return {
     case: {
@@ -20,6 +21,7 @@ const createMockPrisma = () => {
       create: mockCreate,
       update: mockUpdate,
       delete: mockDelete,
+      deleteMany: mockDeleteMany,
     },
     contact: {
       findMany: mockFindMany,
@@ -28,6 +30,7 @@ const createMockPrisma = () => {
       create: mockCreate,
       update: mockUpdate,
       delete: mockDelete,
+      deleteMany: mockDeleteMany,
     },
     parcel: {
       findMany: mockFindMany,
@@ -36,6 +39,7 @@ const createMockPrisma = () => {
       create: mockCreate,
       update: mockUpdate,
       delete: mockDelete,
+      deleteMany: mockDeleteMany,
     },
     scrapingJob: {
       findMany: mockFindMany,
@@ -44,6 +48,7 @@ const createMockPrisma = () => {
       create: mockCreate,
       update: mockUpdate,
       delete: mockDelete,
+      deleteMany: mockDeleteMany,
     },
     phoneUpload: {
       findMany: mockFindMany,
@@ -52,6 +57,7 @@ const createMockPrisma = () => {
       create: mockCreate,
       update: mockUpdate,
       delete: mockDelete,
+      deleteMany: mockDeleteMany,
     },
     settings: {
       findMany: mockFindMany,
@@ -60,6 +66,8 @@ const createMockPrisma = () => {
       create: mockCreate,
       update: mockUpdate,
       delete: mockDelete,
+      deleteMany: mockDeleteMany,
+      upsert: mockUpsert,
     },
     $disconnect: () => Promise.resolve(),
     $connect: () => Promise.resolve(),
@@ -71,7 +79,7 @@ const createPrismaClient = () => {
   // Use mock client during static generation or when database isn't available
   if (!process.env.DATABASE_URL || (process.env.NODE_ENV === 'production' && !process.env.VERCEL_ENV)) {
     console.log('Using mock Prisma client - no DATABASE_URL or build time')
-    return createMockPrisma()
+    return createMockPrisma() as any
   }
 
   return new PrismaClient({
@@ -83,6 +91,6 @@ export const prisma =
   globalForPrisma.prisma ??
   createPrismaClient()
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma as any
 
 export default prisma

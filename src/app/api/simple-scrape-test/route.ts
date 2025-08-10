@@ -48,13 +48,13 @@ export async function POST(_request: NextRequest) {
       }
     })
     
-    console.log('Successfully saved case:', savedCase.id)
+    console.log('Successfully saved case:', (savedCase as any).id)
     
     // Save contacts
     if (testCase.petitioner) {
       await prisma.contact.create({
         data: {
-          caseId: savedCase.id,
+          caseId: (savedCase as any).id,
           type: 'petitioner',
           name: testCase.petitioner
         }
@@ -68,10 +68,10 @@ export async function POST(_request: NextRequest) {
       result: {
         casesGenerated: testCases.length,
         savedCase: {
-          id: savedCase.id,
-          caseNumber: savedCase.caseNumber,
-          decedentName: savedCase.decedentName,
-          county: savedCase.county
+          id: (savedCase as any).id,
+          caseNumber: (savedCase as any).caseNumber,
+          decedentName: (savedCase as any).decedentName,
+          county: (savedCase as any).county
         }
       },
       timestamp: new Date().toISOString()

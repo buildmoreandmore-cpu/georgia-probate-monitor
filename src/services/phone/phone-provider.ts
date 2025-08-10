@@ -9,9 +9,9 @@ export interface PhoneProvider {
 }
 
 export class TrueCallerProvider implements PhoneProvider {
-  constructor(private apiKey: string) {}
+  constructor(private _apiKey: string) {}
 
-  async searchPhone(name: string, address?: string): Promise<PhoneResult | null> {
+  async searchPhone(_name: string, _address?: string): Promise<PhoneResult | null> {
     // TrueCaller API integration would go here
     // This is a stub implementation
     return {
@@ -23,9 +23,9 @@ export class TrueCallerProvider implements PhoneProvider {
 }
 
 export class WhitePagesProvider implements PhoneProvider {
-  constructor(private apiKey: string) {}
+  constructor(private _apiKey: string) {}
 
-  async searchPhone(name: string, address?: string): Promise<PhoneResult | null> {
+  async searchPhone(_name: string, _address?: string): Promise<PhoneResult | null> {
     // WhitePages API integration would go here
     // This is a stub implementation
     return {
@@ -43,8 +43,8 @@ export class CSVPhoneProvider implements PhoneProvider {
     this.loadPhoneData()
   }
 
-  async searchPhone(name: string, address?: string): Promise<PhoneResult | null> {
-    const normalizedName = this.normalizeName(name)
+  async searchPhone(_name: string, _address?: string): Promise<PhoneResult | null> {
+    const normalizedName = this.normalizeName(_name)
     
     // Try exact match first
     const result = this.phoneData.get(normalizedName)
@@ -75,7 +75,7 @@ export class CSVPhoneProvider implements PhoneProvider {
       if (!line) continue
 
       try {
-        const [name, phone, address] = this.parseCSVLine(line)
+        const [name, phone, _address] = this.parseCSVLine(line)
         if (name && phone) {
           const normalizedName = this.normalizeName(name)
           this.phoneData.set(normalizedName, {

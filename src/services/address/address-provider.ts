@@ -13,9 +13,9 @@ export interface AddressProvider {
 
 export class UPSAddressProvider implements AddressProvider {
   constructor(
-    private apiKey: string,
-    private userId: string,
-    private password: string
+    private _apiKey: string,
+    private _userId: string,
+    private _password: string
   ) {}
 
   async standardize(address: string): Promise<StandardizedAddress> {
@@ -30,14 +30,14 @@ export class UPSAddressProvider implements AddressProvider {
     }
   }
 
-  async validateDeliverability(address: string): Promise<boolean> {
+  async validateDeliverability(_address: string): Promise<boolean> {
     // UPS validation logic
     return true
   }
 }
 
 export class USPSAddressProvider implements AddressProvider {
-  constructor(private userId: string) {}
+  constructor(private _userId: string) {}
 
   async standardize(address: string): Promise<StandardizedAddress> {
     // USPS API integration would go here
@@ -51,7 +51,7 @@ export class USPSAddressProvider implements AddressProvider {
     }
   }
 
-  async validateDeliverability(address: string): Promise<boolean> {
+  async validateDeliverability(_address: string): Promise<boolean> {
     // USPS validation logic
     return true
   }
@@ -71,8 +71,8 @@ export class FreeAddressProvider implements AddressProvider {
     }
   }
 
-  async validateDeliverability(address: string): Promise<boolean> {
-    return this.basicDeliverabilityCheck(address)
+  async validateDeliverability(_address: string): Promise<boolean> {
+    return this.basicDeliverabilityCheck(_address)
   }
 
   private normalizeAddress(address: string): string {

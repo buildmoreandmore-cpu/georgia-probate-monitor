@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
       // Add contacts for each case
       const contacts = [
         {
-          caseId: savedCase.id,
+          caseId: (savedCase as any).id,
           type: 'executor',
           name: `${demoCase.decedentName.split(' ')[0]} ${demoCase.decedentName.split(' ').pop()} Jr.`,
           originalAddress: `${Math.floor(Math.random() * 9999) + 1000} Demo St, ${demoCase.county === 'cobb' ? 'Marietta' : demoCase.county === 'fulton' ? 'Atlanta' : 'Decatur'}, GA 30${Math.floor(Math.random() * 900) + 100}`,
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
           phoneConfidence: 0.85 + Math.random() * 0.15
         },
         {
-          caseId: savedCase.id,
+          caseId: (savedCase as any).id,
           type: 'administrator',
           name: `Demo Administrator ${Math.floor(Math.random() * 100)}`,
           originalAddress: `${Math.floor(Math.random() * 9999) + 1000} Admin Ave, ${demoCase.county === 'cobb' ? 'Kennesaw' : demoCase.county === 'fulton' ? 'Sandy Springs' : 'Stone Mountain'}, GA 30${Math.floor(Math.random() * 900) + 100}`,
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
       // Add parcels for each case
       const parcels = [
         {
-          caseId: savedCase.id,
+          caseId: (savedCase as any).id,
           parcelId: `${demoCase.county.toUpperCase()}-${Math.floor(Math.random() * 900000) + 100000}`,
           county: demoCase.county,
           situsAddress: demoCase.decedentAddress,
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
       // Sometimes add a second property
       if (Math.random() > 0.6) {
         parcels.push({
-          caseId: savedCase.id,
+          caseId: (savedCase as any).id,
           parcelId: `${demoCase.county.toUpperCase()}-${Math.floor(Math.random() * 900000) + 100000}`,
           county: demoCase.county,
           situsAddress: `${Math.floor(Math.random() * 9999) + 1000} Investment Dr, ${demoCase.county === 'cobb' ? 'Acworth' : demoCase.county === 'fulton' ? 'Roswell' : 'Lithonia'}, GA 30${Math.floor(Math.random() * 900) + 100}`,

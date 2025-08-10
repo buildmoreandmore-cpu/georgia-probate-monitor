@@ -88,8 +88,8 @@ export async function GET(_request: NextRequest) {
         
         writeTest = {
           success: true,
-          savedCaseId: savedCase.id,
-          savedCaseNumber: savedCase.caseNumber
+          savedCaseId: (savedCase as any).id,
+          savedCaseNumber: (savedCase as any).caseNumber
         }
         console.log('Database write test passed:', writeTest)
         

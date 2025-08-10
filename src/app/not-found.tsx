@@ -13,11 +13,11 @@ export default function NotFound() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button asChild>
-            <Link href="/">
+          <Link href="/">
+            <Button>
               Return Home
-            </Link>
-          </Button>
+            </Button>
+          </Link>
         </CardContent>
       </Card>
     </div>

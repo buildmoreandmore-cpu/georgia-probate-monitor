@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     const settings = await prisma.settings.findMany()
     
-    const settingsObject = settings.reduce((acc, setting) => {
+    const settingsObject = settings.reduce((acc: any, setting: any) => {
       acc[setting.key] = setting.value
       return acc
     }, {} as Record<string, string>)

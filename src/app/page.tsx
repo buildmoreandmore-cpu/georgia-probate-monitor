@@ -2,7 +2,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { getDashboardStats, getRecentJobs } from '@/services/cases'
 import { ScrapingButton } from '@/components/scraping-button'
 
-// Demo data functions removed - using real server data
+// Cache for 2 minutes - dashboard data changes frequently
+export const revalidate = 120
 
 export default async function Dashboard() {
   // Fetch data directly on server - no client-side fetching
@@ -85,7 +86,7 @@ export default async function Dashboard() {
             </p>
           ) : (
             <div className="space-y-2">
-              {recentJobs.map((job) => (
+              {recentJobs.map((job: any) => (
                 <div key={job.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className={`w-2 h-2 rounded-full ${
@@ -107,7 +108,7 @@ export default async function Dashboard() {
                       {job.recordsFound} records
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {new Date(job.startedAt).toLocaleDateString()}
+                      {job.startedAt ? new Date(job.startedAt).toLocaleDateString() : 'Unknown'}
                     </div>
                   </div>
                 </div>

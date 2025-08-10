@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Transform to output format
-    const outputCases: CaseOutput[] = cases.map(caseData => ({
+    const outputCases: CaseOutput[] = cases.map((caseData: any) => ({
       case_id: caseData.caseId,
       county: caseData.county,
       filing_date: caseData.filingDate.toISOString(),
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
         address: caseData.decedentAddress || ''
       },
       estate_value: caseData.estateValue,
-      contacts: caseData.contacts.map(contact => ({
+      contacts: caseData.contacts.map((contact: any) => ({
         type: contact.type as 'executor' | 'administrator' | 'petitioner',
         name: contact.name,
         original_address: contact.originalAddress || '',
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
         phone: contact.phone,
         phone_source: contact.phoneSource as 'csv' | 'provider' | null
       })),
-      parcels: caseData.parcels.map(parcel => ({
+      parcels: caseData.parcels.map((parcel: any) => ({
         parcel_id: parcel.parcelId,
         county: parcel.county,
         situs_address: parcel.situsAddress || '',

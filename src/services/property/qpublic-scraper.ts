@@ -24,7 +24,7 @@ export class QPublicScraper extends BaseScraper {
     gwinnett: 'https://qpublic.schneidercorp.com/Application.aspx?AppID=1282&LayerID=43872&PageID=16058'
   }
 
-  async scrape(dateFrom?: Date, dateTo?: Date): Promise<ScrapedCase[]> {
+  async scrape(_dateFrom?: Date, _dateTo?: Date): Promise<ScrapedCase[]> {
     throw new Error('Use searchByOwner or searchByAddress instead')
   }
 
