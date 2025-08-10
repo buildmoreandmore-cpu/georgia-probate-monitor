@@ -501,7 +501,7 @@ export class HybridPlaywrightScraper {
       await this.sleep(3000)
 
       // Extract property details with multiple selector attempts
-      const extractField = async (label: string, selectors: string[]) => {
+      const extractField = async (_label: string, selectors: string[]) => {
         for (const selector of selectors) {
           try {
             const element = await qpublicPage.locator(selector).first()
@@ -542,7 +542,7 @@ export class HybridPlaywrightScraper {
     }
   }
 
-  private async scrapeCobb(dateFrom?: Date): Promise<ScrapedCase[]> {
+  private async scrapeCobb(_dateFrom?: Date): Promise<ScrapedCase[]> {
     console.log('🏛️  Cobb County scraping not yet implemented')
     return []
   }

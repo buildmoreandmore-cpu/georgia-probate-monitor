@@ -4,9 +4,9 @@ import { NextRequest, NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 
 // Debug endpoint for environment variables
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
-    const databaseUrl = process.env.DATABASE_URL
+    const _databaseUrl = process.env.DATABASE_URL
     
     return NextResponse.json({
       success: true,

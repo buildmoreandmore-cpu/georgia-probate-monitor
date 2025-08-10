@@ -85,14 +85,14 @@ export async function POST(request: NextRequest) {
           }
         })
 
-        console.log(`✅ Created case: ${savedCase.caseNumber} - ${savedCase.decedentName}`)
+        console.log(`✅ Created case for ${caseData.decedentName}`)
 
         // Create contacts
         if (caseData.contacts) {
           for (const contact of caseData.contacts) {
             await prisma.contact.create({
               data: {
-                caseId: savedCase.id,
+                caseId: (savedCase as any).id,
                 type: contact.type,
                 name: contact.name,
                 originalAddress: contact.address
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
           for (const property of caseData.properties) {
             await prisma.parcel.create({
               data: {
-                caseId: savedCase.id,
+                caseId: (savedCase as any).id,
                 parcelId: property.parcelId,
                 county: caseData.county,
                 situsAddress: property.situsAddress,

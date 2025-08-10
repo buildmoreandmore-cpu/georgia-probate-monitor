@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -55,13 +55,7 @@ export default function CaseDetailPage() {
   const [notes, setNotes] = useState('')
   const [status, setStatus] = useState<'active' | 'archived'>('active')
 
-  useEffect(() => {
-    if (params.id) {
-      fetchCaseDetail()
-    }
-  }, [params.id])
-
-  const fetchCaseDetail = async () => {
+  const fetchCaseDetail = useCallback(async () => {
     // Skip API calls during build/SSR
     if (typeof window === 'undefined') {
       console.log('Skipping API calls during build')
@@ -84,7 +78,13 @@ export default function CaseDetailPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [params.id])
+
+  useEffect(() => {
+    if (params.id) {
+      fetchCaseDetail()
+    }
+  }, [params.id, fetchCaseDetail])
 
   const handleSave = async () => {
     try {
