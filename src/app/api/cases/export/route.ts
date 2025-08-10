@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { rateLimiter, getClientIdentifier } from '@/lib/rate-limiter'
+
+export const dynamic = 'force-dynamic'
 import { CaseOutput } from '@/lib/schemas'
 
 const ExportSchema = z.object({

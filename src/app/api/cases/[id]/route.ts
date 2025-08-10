@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { rateLimiter, getClientIdentifier } from '@/lib/rate-limiter'
-import { CaseOutputSchema } from '@/lib/schemas'
+// Removed unused CaseOutputSchema import
+
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 const UpdateCaseSchema = z.object({
   notes: z.string().optional(),
@@ -14,6 +17,13 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Skip database operations during build
+    if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL) {
+      return NextResponse.json({
+        error: 'Not available during build'
+      }, { status: 503 })
+    }
+
     // Rate limiting
     const clientId = getClientIdentifier(request)
     const rateLimit = rateLimiter.allow(clientId)

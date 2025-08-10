@@ -59,6 +59,13 @@ export default function CasesPage() {
   }, [pagination.page, filters, sortField, sortDirection])
 
   const fetchCases = async () => {
+    // Skip API calls during build/SSR
+    if (typeof window === 'undefined') {
+      console.log('Skipping API calls during build')
+      setIsLoading(false)
+      return
+    }
+    
     setIsLoading(true)
     try {
       const params = new URLSearchParams({

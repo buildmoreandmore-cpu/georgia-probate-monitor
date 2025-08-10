@@ -60,6 +60,11 @@ export class RateLimiter {
 export const rateLimiter = new RateLimiter()
 
 export function getClientIdentifier(request: Request): string {
+  // Skip headers during build/static generation
+  if (typeof window === 'undefined' && !process.env.VERCEL) {
+    return 'build-time'
+  }
+  
   const forwarded = request.headers.get('x-forwarded-for')
   const realIp = request.headers.get('x-real-ip')
   const clientIp = forwarded?.split(',')[0] || realIp || 'unknown'

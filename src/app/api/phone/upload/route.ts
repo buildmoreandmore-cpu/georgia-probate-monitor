@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { rateLimiter, getClientIdentifier } from '@/lib/rate-limiter'
+
+export const dynamic = 'force-dynamic'
 import { PhoneService } from '@/services/phone/phone-service'
 
 export async function POST(request: NextRequest) {

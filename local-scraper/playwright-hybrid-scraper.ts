@@ -113,55 +113,167 @@ export class HybridPlaywrightScraper {
         console.log('ℹ️  No terms modal found, continuing...')
       }
 
-      // Fill date range - search for today's filings
-      const today = dateFrom || new Date()
-      const todayStr = today.toLocaleDateString('en-US', { 
+      // Search for today only to find the records you mentioned
+      const searchDate = dateFrom || new Date()
+      const startDate = new Date(searchDate)
+      const endDate = new Date(searchDate)
+      
+      const startDateStr = startDate.toLocaleDateString('en-US', { 
+        month: '2-digit', 
+        day: '2-digit', 
+        year: 'numeric' 
+      })
+      const endDateStr = endDate.toLocaleDateString('en-US', { 
         month: '2-digit', 
         day: '2-digit', 
         year: 'numeric' 
       })
 
-      console.log(`📅 Searching for filings on ${todayStr}...`)
+      console.log(`📅 Searching for filings/deaths from ${startDateStr} to ${endDateStr}...`)
       
-      // Try multiple date field patterns
-      const dateFields = [
-        'input[id*="FiledStartDate"]',
-        'input[name*="FiledStartDate"]',
-        'input[id*="txtFiledStartDate"]',
-        'input[name*="txtFiledStartDate"]'
+      // Try to select a county to increase chances of finding records
+      try {
+        const countyDropdown = page.locator('#ctl00_cpMain_ddlCounty')
+        if (await countyDropdown.isVisible({ timeout: 3000 })) {
+          console.log('🏛️ Attempting to select Fulton county for search...')
+          await countyDropdown.click()
+          await page.waitForTimeout(2000)
+          
+          // Try multiple ways to find Fulton in the dropdown
+          const fultonSelectors = [
+            'li:has-text("Fulton")',
+            '.rddlItem:has-text("Fulton")',
+            'li.rddlItem:has-text("Fulton")'
+          ]
+          
+          let selected = false
+          for (const selector of fultonSelectors) {
+            try {
+              const option = page.locator(selector).first()
+              if (await option.isVisible({ timeout: 2000 })) {
+                await option.click()
+                selected = true
+                console.log('✅ Selected Fulton county')
+                await page.waitForTimeout(1000)
+                break
+              }
+            } catch (e) {
+              continue
+            }
+          }
+          
+          if (!selected) {
+            console.log('⚠️  Could not select county, continuing with all counties')
+            await page.keyboard.press('Escape') // Close dropdown
+          }
+        }
+      } catch (error) {
+        console.log('⚠️  County selection failed, continuing with all counties')
+      }
+      
+      // Fill both filed date AND deceased date fields to maximize coverage
+      const dateFieldPairs = [
+        {
+          type: 'Filed Date',
+          start: [
+            'input[id="ctl00_cpMain_txtFiledStartDate_dateInput"]',
+            'input[id*="txtFiledStartDate_dateInput"]'
+          ],
+          end: [
+            'input[id="ctl00_cpMain_txtFiledEndDate_dateInput"]',
+            'input[id*="txtFiledEndDate_dateInput"]'
+          ]
+        },
+        {
+          type: 'Deceased Date', 
+          start: [
+            'input[id="ctl00_cpMain_txtDeceasedStartDate_dateInput"]',
+            'input[id*="txtDeceasedStartDate_dateInput"]'
+          ],
+          end: [
+            'input[id="ctl00_cpMain_txtDeceasedEndDate_dateInput"]',
+            'input[id*="txtDeceasedEndDate_dateInput"]'
+          ]
+        }
       ]
       
-      for (const field of dateFields) {
-        try {
-          if (await page.locator(field).isVisible({ timeout: 1000 })) {
-            await page.fill(field, todayStr)
-            console.log(`✅ Filled start date field: ${field}`)
-            break
+      for (const datePair of dateFieldPairs) {
+        // Fill start date
+        for (const field of datePair.start) {
+          try {
+            if (await page.locator(field).isVisible({ timeout: 1000 })) {
+              await page.fill(field, startDateStr)
+              console.log(`✅ Filled ${datePair.type} start field with ${startDateStr}`)
+              break
+            }
+          } catch (error) {
+            continue
           }
-        } catch (error) {
-          continue
+        }
+        
+        // Fill end date
+        for (const field of datePair.end) {
+          try {
+            if (await page.locator(field).isVisible({ timeout: 1000 })) {
+              await page.fill(field, endDateStr)
+              console.log(`✅ Filled ${datePair.type} end field with ${endDateStr}`)
+              break
+            }
+          } catch (error) {
+            continue
+          }
         }
       }
 
-      // Submit search
+      // Submit search - need to find the actual search button
+      console.log('🔍 Looking for search button...')
+      
       const searchButtons = [
+        'input[id="ctl00_cpMain_btnSearch_input"]', // From the HTML we saw
+        'input[value="Search"]',
+        'span[id="ctl00_cpMain_btnSearch"]',
+        '#ctl00_cpMain_btnSearch',
         'input[type="submit"]',
-        'button:has-text("Search")',
-        'input[value*="Search"]',
-        '#btnSearch',
-        '.search-button'
+        'button:has-text("Search")'
       ]
       
+      let searchClicked = false
       for (const button of searchButtons) {
         try {
-          if (await page.locator(button).isVisible({ timeout: 1000 })) {
-            console.log('🔍 Clicking search button...')
-            await page.click(button)
-            await page.waitForTimeout(5000)
+          if (await page.locator(button).isVisible({ timeout: 2000 })) {
+            console.log(`🔍 Found and clicking search button: ${button}`)
+            await page.click(button, { timeout: 5000 })
+            searchClicked = true
+            console.log('⏳ Waiting for search results...')
+            
+            // Wait for the page to reload/update after search
+            try {
+              await page.waitForLoadState('networkidle', { timeout: 15000 })
+            } catch (e) {
+              await page.waitForTimeout(8000) // Fallback wait
+            }
             break
           }
         } catch (error) {
+          console.log(`⚠️  Could not click ${button}: ${error}`)
           continue
+        }
+      }
+      
+      if (!searchClicked) {
+        console.log('❌ Could not find or click search button!')
+        // Let's see what buttons are available
+        const allButtons = await page.locator('input[type="submit"], button, .RadButton').all()
+        console.log(`Found ${allButtons.length} potential buttons on page`)
+        for (let i = 0; i < Math.min(allButtons.length, 5); i++) {
+          try {
+            const text = await allButtons[i].textContent()
+            const id = await allButtons[i].getAttribute('id')
+            const value = await allButtons[i].getAttribute('value')
+            console.log(`Button ${i}: text="${text}", id="${id}", value="${value}"`)
+          } catch (e) {
+            console.log(`Button ${i}: Could not get attributes`)
+          }
         }
       }
 
@@ -187,28 +299,23 @@ export class HybridPlaywrightScraper {
       writeFileSync(htmlPath, html)
       console.log(`💾 Saved search results HTML: ${htmlPath}`)
 
-      // Find result rows - try multiple patterns
-      const resultSelectors = [
-        'table tr:has(td)',
-        '.RadGrid tbody tr',
-        '[class*="result"] tr',
-        '.search-results tr',
-        'tr:has(td:nth-child(3))'
-      ]
+      // Check if RadGrid has results - look for the estates grid specifically
+      const estatesGrid = await page.locator('#ctl00_cpMain_rgEstates, [id*="rgEstates"]').first()
       
-      let resultRows: any[] = []
-      for (const selector of resultSelectors) {
-        resultRows = await page.locator(selector).all()
-        if (resultRows.length > 1) { // More than header row
-          console.log(`✅ Found ${resultRows.length} result rows using: ${selector}`)
-          break
-        }
-      }
-
-      if (resultRows.length <= 1) {
-        console.log('ℹ️  No result rows found')
+      if (!await estatesGrid.isVisible({ timeout: 5000 })) {
+        console.log('ℹ️  No estates grid found - likely no results')
         return cases
       }
+
+      // Look for data rows within the RadGrid
+      const resultRows = await estatesGrid.locator('tbody tr[class*="GridDataItem"], tbody tr[class*="GridAlternatingItem"], tbody tr:has(td[class*="GridData"])').all()
+      
+      if (resultRows.length === 0) {
+        console.log('ℹ️  No case data found in RadGrid - empty results')
+        return cases
+      }
+
+      console.log(`✅ Found ${resultRows.length} case records in RadGrid`)
 
       // Process results (skip header row)
       for (let i = 1; i < Math.min(resultRows.length, 11); i++) {
@@ -442,7 +549,7 @@ export class HybridPlaywrightScraper {
 
   private async uploadCasesToVercel(cases: ScrapedCase[]): Promise<void> {
     try {
-      const response = await fetch(`${this.vercelApiUrl}/api/test-upload`, {
+      const response = await fetch(`${this.vercelApiUrl}/api/cases-bulk`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

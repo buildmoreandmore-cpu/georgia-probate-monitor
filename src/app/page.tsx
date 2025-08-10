@@ -1,25 +1,6 @@
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { getDashboardStats, getRecentJobs } from '@/services/cases'
 import { ScrapingButton } from '@/components/scraping-button'
-
-interface DashboardStats {
-  totalCases: number
-  recentCases: number
-  completedJobs: number
-  failedJobs: number
-}
-
-interface ScrapingJob {
-  id: string
-  county: string
-  source: string
-  status: string
-  startedAt: string
-  completedAt?: string
-  recordsFound: number
-  errorMessage?: string
-}
 
 // Demo data functions removed - using real server data
 
