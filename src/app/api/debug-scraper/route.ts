@@ -12,12 +12,13 @@ export async function GET(request: NextRequest) {
       success: true,
       timestamp: new Date().toISOString(),
       environment: {
-        DATABASE_URL: databaseUrl ? 'set' : 'not set',
-        DATABASE_URL_PREFIX: databaseUrl ? databaseUrl.substring(0, 20) + '...' : 'none',
+        DATABASE: process.env.DATABASE ? 'set' : 'not set',
+        DATABASE_PREFIX: process.env.DATABASE ? process.env.DATABASE.substring(0, 25) + '...' : 'none',
+        DIRECT: process.env.DIRECT ? 'set' : 'not set',
+        DIRECT_PREFIX: process.env.DIRECT ? process.env.DIRECT.substring(0, 25) + '...' : 'none',
         NODE_ENV: process.env.NODE_ENV,
         VERCEL: process.env.VERCEL,
-        VERCEL_ENV: process.env.VERCEL_ENV,
-        POSTGRES_URL: process.env.POSTGRES_URL ? 'set' : 'not set'
+        VERCEL_ENV: process.env.VERCEL_ENV
       }
     })
 
