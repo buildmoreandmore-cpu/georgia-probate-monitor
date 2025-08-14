@@ -76,9 +76,10 @@ const createMockPrisma = () => {
 
 // Use mock during build when database isn't available
 const createPrismaClient = () => {
-  // Use mock client during static generation or when database isn't available
-  if (!process.env.DATABASE_URL || (process.env.NODE_ENV === 'production' && !process.env.VERCEL_ENV)) {
-    console.log('Using mock Prisma client - no DATABASE_URL or build time')
+  // Only use mock client during build time when NODE_ENV is not production
+  // or when explicitly no DATABASE_URL is available
+  if (!process.env.DATABASE_URL) {
+    console.log('Using mock Prisma client - no DATABASE_URL')
     return createMockPrisma() as any
   }
 
