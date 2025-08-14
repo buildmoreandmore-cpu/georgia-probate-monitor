@@ -12,6 +12,8 @@ const GetCasesSchema = z.object({
   status: z.enum(['active', 'archived']).optional(),
   dateFrom: z.string().optional(),
   dateTo: z.string().optional(),
+  estateValueMin: z.coerce.number().min(0).optional(),
+  estateValueMax: z.coerce.number().min(0).optional(),
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20)
 })
@@ -49,6 +51,8 @@ export async function GET(request: NextRequest) {
       status: searchParams.get('status'),
       dateFrom: searchParams.get('dateFrom'),
       dateTo: searchParams.get('dateTo'),
+      estateValueMin: searchParams.get('estateValueMin'),
+      estateValueMax: searchParams.get('estateValueMax'),
       page: searchParams.get('page'),
       limit: searchParams.get('limit')
     })
@@ -61,6 +65,11 @@ export async function GET(request: NextRequest) {
       where.filingDate = {}
       if (params.dateFrom) where.filingDate.gte = new Date(params.dateFrom)
       if (params.dateTo) where.filingDate.lte = new Date(params.dateTo)
+    }
+    if (params.estateValueMin !== undefined || params.estateValueMax !== undefined) {
+      where.estateValue = {}
+      if (params.estateValueMin !== undefined) where.estateValue.gte = params.estateValueMin
+      if (params.estateValueMax !== undefined) where.estateValue.lte = params.estateValueMax
     }
 
     // Get total count

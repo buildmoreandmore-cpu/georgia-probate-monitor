@@ -52,15 +52,24 @@ export async function POST(request: NextRequest) {
       orderBy: { filingDate: 'desc' }
     })
 
-    // Transform to output format
-    const outputCases: CaseOutput[] = cases.map((caseData: any) => ({
-      case_id: caseData.caseId,
+    // Transform to output format with new petitioner fields
+    const outputCases = cases.map((caseData: any) => ({
       county: caseData.county,
+      case_number: caseData.caseNumber || '',
       filing_date: caseData.filingDate.toISOString(),
-      decedent: {
-        name: caseData.decedentName,
-        address: caseData.decedentAddress || ''
-      },
+      petitioner_first_name: caseData.petitionerFirstName || '',
+      petitioner_last_name: caseData.petitionerLastName || '',
+      petitioner_address: caseData.petitionerAddress || '',
+      petitioner_city: caseData.petitionerCity || '',
+      petitioner_state: caseData.petitionerState || '',
+      petitioner_zipcode: caseData.petitionerZipcode || '',
+      petitioner_phone: caseData.petitionerPhone || '',
+      petitioner_email: caseData.petitionerEmail || '',
+      decedent_name: caseData.decedentName,
+      decedent_address: caseData.decedentAddress || '',
+      decedent_city: caseData.decedentCity || '',
+      decedent_state: caseData.decedentState || '',
+      decedent_zipcode: caseData.decedentZipcode || '',
       estate_value: caseData.estateValue,
       contacts: caseData.contacts.map((contact: any) => ({
         type: contact.type as 'executor' | 'administrator' | 'petitioner',
@@ -119,71 +128,55 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function generateCSV(cases: CaseOutput[]): string {
+function generateCSV(cases: any[]): string {
   const headers = [
-    'case_id',
     'county',
+    'case_number',
     'filing_date',
+    'petitioner_first_name',
+    'petitioner_last_name',
+    'petitioner_address',
+    'petitioner_city',
+    'petitioner_state',
+    'petitioner_zipcode',
+    'petitioner_phone',
+    'petitioner_email',
     'decedent_name',
     'decedent_address',
-    'estate_value',
-    'contact_type',
-    'contact_name',
-    'contact_original_address',
-    'contact_standardized_address',
-    'contact_ups_deliverable',
-    'contact_phone',
-    'contact_phone_source',
-    'parcel_id',
-    'parcel_county',
-    'parcel_situs_address',
-    'parcel_tax_mailing_address',
-    'parcel_current_owner',
-    'parcel_last_sale_date',
-    'parcel_assessed_value',
-    'qpublic_url'
+    'decedent_city',
+    'decedent_state',
+    'decedent_zipcode',
+    'estate_value'
   ]
 
   const rows: string[][] = [headers]
 
   for (const caseData of cases) {
-    // Handle cases with no contacts or parcels
-    const maxRows = Math.max(caseData.contacts.length, caseData.parcels.length, 1)
+    const row = [
+      caseData.county || '',
+      caseData.case_number || '',
+      caseData.filing_date || '',
+      caseData.petitioner_first_name || '',
+      caseData.petitioner_last_name || '',
+      caseData.petitioner_address || '',
+      caseData.petitioner_city || '',
+      caseData.petitioner_state || '',
+      caseData.petitioner_zipcode || '',
+      caseData.petitioner_phone || '',
+      caseData.petitioner_email || '',
+      caseData.decedent_name || '',
+      caseData.decedent_address || '',
+      caseData.decedent_city || '',
+      caseData.decedent_state || '',
+      caseData.decedent_zipcode || '',
+      caseData.estate_value?.toString() || ''
+    ]
 
-    for (let i = 0; i < maxRows; i++) {
-      const contact = caseData.contacts[i]
-      const parcel = caseData.parcels[i]
-
-      const row = [
-        caseData.case_id,
-        caseData.county,
-        caseData.filing_date,
-        caseData.decedent.name,
-        caseData.decedent.address,
-        caseData.estate_value?.toString() || '',
-        contact?.type || '',
-        contact?.name || '',
-        contact?.original_address || '',
-        contact?.standardized_address || '',
-        contact?.ups_deliverable?.toString() || '',
-        contact?.phone || '',
-        contact?.phone_source || '',
-        parcel?.parcel_id || '',
-        parcel?.county || '',
-        parcel?.situs_address || '',
-        parcel?.tax_mailing_address || '',
-        parcel?.current_owner || '',
-        parcel?.last_sale_date || '',
-        parcel?.assessed_value?.toString() || '',
-        parcel?.qpublic_url || ''
-      ]
-
-      rows.push(row)
-    }
+    rows.push(row)
   }
 
   return rows.map(row => 
-    row.map(field => `"${field.replace(/"/g, '""')}"`)
+    row.map(field => `"${field.toString().replace(/"/g, '""')}"`)
        .join(',')
   ).join('\n')
 }

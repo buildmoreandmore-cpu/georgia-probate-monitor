@@ -6,10 +6,29 @@ export interface CaseData {
   caseId: string
   county: string
   filingDate: string
+  caseNumber?: string
+  
+  // Petitioner information for outreach
+  petitionerFirstName?: string
+  petitionerLastName?: string
+  petitionerAddress?: string
+  petitionerCity?: string
+  petitionerState?: string
+  petitionerZipcode?: string
+  petitionerPhone?: string
+  petitionerEmail?: string
+  
+  // Decedent information
   decedentName: string
   decedentAddress?: string
+  decedentCity?: string
+  decedentState?: string
+  decedentZipcode?: string
+  
   estateValue?: number
   status: string
+  
+  // Keep for detailed view
   contacts: Array<{
     id: string
     type: string
@@ -28,6 +47,8 @@ export interface ListCasesParams {
   status?: string
   dateFrom?: string
   dateTo?: string
+  estateValueMin?: number
+  estateValueMax?: number
   page?: number
   limit?: number
 }
@@ -39,6 +60,8 @@ export const listCases = cache(async (params: ListCasesParams = {}) => {
     status = 'active',
     dateFrom,
     dateTo,
+    estateValueMin,
+    estateValueMax,
     page = 1,
     limit = 20
   } = params
@@ -46,10 +69,17 @@ export const listCases = cache(async (params: ListCasesParams = {}) => {
   // Build where clause
   const where: any = { status }
   if (county) where.county = county
+  
   if (dateFrom || dateTo) {
     where.filingDate = {}
     if (dateFrom) where.filingDate.gte = new Date(dateFrom)
     if (dateTo) where.filingDate.lte = new Date(dateTo)
+  }
+
+  if (estateValueMin !== undefined || estateValueMax !== undefined) {
+    where.estateValue = {}
+    if (estateValueMin !== undefined) where.estateValue.gte = estateValueMin
+    if (estateValueMax !== undefined) where.estateValue.lte = estateValueMax
   }
 
   const [cases, total] = await Promise.all([
@@ -70,13 +100,21 @@ export const listCases = cache(async (params: ListCasesParams = {}) => {
     data: cases.map((case_: any) => ({
       ...case_,
       filingDate: case_.filingDate.toISOString(),
-      decedentAddress: case_.decedentAddress || undefined,
-      estateValue: case_.estateValue || undefined,
+      // Ensure all optional fields are properly handled
       caseNumber: case_.caseNumber || undefined,
-      attorney: case_.attorney || undefined,
-      attorneyPhone: case_.attorneyPhone || undefined,
-      courtUrl: case_.courtUrl || undefined,
-      notes: case_.notes || undefined
+      petitionerFirstName: case_.petitionerFirstName || undefined,
+      petitionerLastName: case_.petitionerLastName || undefined,
+      petitionerAddress: case_.petitionerAddress || undefined,
+      petitionerCity: case_.petitionerCity || undefined,
+      petitionerState: case_.petitionerState || undefined,
+      petitionerZipcode: case_.petitionerZipcode || undefined,
+      petitionerPhone: case_.petitionerPhone || undefined,
+      petitionerEmail: case_.petitionerEmail || undefined,
+      decedentAddress: case_.decedentAddress || undefined,
+      decedentCity: case_.decedentCity || undefined,
+      decedentState: case_.decedentState || undefined,
+      decedentZipcode: case_.decedentZipcode || undefined,
+      estateValue: case_.estateValue || undefined
     })) as CaseData[],
     pagination: {
       page,

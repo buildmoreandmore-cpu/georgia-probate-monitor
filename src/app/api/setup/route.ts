@@ -17,6 +17,9 @@ export async function POST(request: NextRequest) {
         "filingDate" TIMESTAMP(3) NOT NULL,
         "decedentName" TEXT NOT NULL,
         "decedentAddress" TEXT,
+        "decedentCity" TEXT,
+        "decedentState" TEXT,
+        "decedentZipcode" TEXT,
         "estateValue" DOUBLE PRECISION,
         "caseNumber" TEXT,
         "attorney" TEXT,
@@ -24,6 +27,14 @@ export async function POST(request: NextRequest) {
         "courtUrl" TEXT,
         "status" TEXT NOT NULL DEFAULT 'active',
         "notes" TEXT,
+        "petitionerFirstName" TEXT,
+        "petitionerLastName" TEXT,
+        "petitionerAddress" TEXT,
+        "petitionerCity" TEXT,
+        "petitionerState" TEXT,
+        "petitionerZipcode" TEXT,
+        "petitionerPhone" TEXT,
+        "petitionerEmail" TEXT,
         "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT "Case_pkey" PRIMARY KEY ("id")
@@ -40,6 +51,10 @@ export async function POST(request: NextRequest) {
 
     await prisma.$executeRaw`
       CREATE INDEX IF NOT EXISTS "Case_filingDate_idx" ON "Case"("filingDate");
+    `
+
+    await prisma.$executeRaw`
+      CREATE INDEX IF NOT EXISTS "Case_estateValue_idx" ON "Case"("estateValue");
     `
 
     await prisma.$executeRaw`

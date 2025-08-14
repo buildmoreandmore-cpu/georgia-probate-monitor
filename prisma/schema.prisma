@@ -16,6 +16,9 @@ model Case {
   filingDate    DateTime
   decedentName  String
   decedentAddress String?
+  decedentCity  String?
+  decedentState String?
+  decedentZipcode String?
   estateValue   Float?
   caseNumber    String?
   attorney      String?
@@ -23,6 +26,17 @@ model Case {
   courtUrl      String?
   status        String   @default("active")
   notes         String?
+  
+  // Petitioner fields for outreach
+  petitionerFirstName String?
+  petitionerLastName  String?
+  petitionerAddress   String?
+  petitionerCity      String?
+  petitionerState     String?
+  petitionerZipcode   String?
+  petitionerPhone     String?
+  petitionerEmail     String?
+  
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -31,6 +45,7 @@ model Case {
   
   @@index([county])
   @@index([filingDate])
+  @@index([estateValue])
 }
 
 model Contact {
