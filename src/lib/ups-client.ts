@@ -1,15 +1,16 @@
 import { z } from 'zod'
 
-const UPS_BASE_URL = process.env.UPS_BASE_URL!
-const UPS_CLIENT_ID = process.env.UPS_CLIENT_ID!
-const UPS_CLIENT_SECRET = process.env.UPS_CLIENT_SECRET!
+const UPS_BASE_URL = process.env.UPS_BASE_URL
+const UPS_CLIENT_ID = process.env.UPS_CLIENT_ID
+const UPS_CLIENT_SECRET = process.env.UPS_CLIENT_SECRET
 
-if (!UPS_BASE_URL || !UPS_CLIENT_ID || !UPS_CLIENT_SECRET)
-  throw new Error('UPS env is not configured')
+const UPS_ENABLED = !!(UPS_BASE_URL && UPS_CLIENT_ID && UPS_CLIENT_SECRET)
 
 let cachedToken: { value: string, exp: number } | null = null
 
 async function getToken (): Promise<string> {
+  if (!UPS_ENABLED) throw new Error('UPS not configured')
+  
   const now = Date.now()
   if (cachedToken && now < cachedToken.exp) return cachedToken.value
 
@@ -39,6 +40,9 @@ export interface VerifyInput {
 
 /** requestoption=3 (validation+classification) */
 export async function verifyAddress (input: VerifyInput) {
+  if (!UPS_ENABLED) {
+    throw new Error('UPS address validation not configured')
+  }
   const payload = {
     XAVRequest: {
       AddressKeyFormat: {

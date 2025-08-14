@@ -1,7 +1,7 @@
 'use server'
 
 import { z } from 'zod'
-import { action } from 'next-safe-action'
+import { createSafeActionClient } from 'next-safe-action'
 import { verifyAddress } from '@/lib/ups-client'
 
 const Input = z.object({
@@ -13,7 +13,9 @@ const Input = z.object({
   countryCode: z.string().default('US')
 })
 
-export const verifyUpsAddress = action(Input, async (input) => {
+const action = createSafeActionClient()
+
+export const verifyUpsAddress = action.schema(Input).action(async ({ parsedInput: input }) => {
   if (!input.postalCode && !(input.city && input.state))
     return { ok: false as const, message: 'Need postal code or city+state' }
   try {
