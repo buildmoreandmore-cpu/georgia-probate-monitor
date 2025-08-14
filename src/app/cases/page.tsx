@@ -51,15 +51,17 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
   })
 
   return (
-    <Suspense fallback={
-      <div className="flex justify-center py-8">
-        Loading cases...
-      </div>
-    }>
-      <CasesTable 
-        cases={result.data}
-        pagination={result.pagination}
-      />
-    </Suspense>
+    <div className="container mx-auto px-4 md:px-6">
+      <Suspense fallback={
+        <div className="flex justify-center py-8">
+          Loading cases...
+        </div>
+      }>
+        <CasesTable 
+          cases={result.data}
+          pagination={result.pagination}
+        />
+      </Suspense>
+    </div>
   )
 }

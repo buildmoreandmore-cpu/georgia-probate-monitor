@@ -2,8 +2,13 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
-export function ScrapingButton() {
+interface ScrapingButtonProps {
+  className?: string
+}
+
+export function ScrapingButton({ className }: ScrapingButtonProps) {
   const [isScraping, setIsScraping] = useState(false)
 
   const startScraping = async () => {
@@ -37,6 +42,7 @@ export function ScrapingButton() {
     <Button 
       onClick={startScraping} 
       disabled={isScraping}
+      className={cn('', className)}
     >
       {isScraping ? 'Running...' : 'Start Scraping'}
     </Button>

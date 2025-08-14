@@ -1,6 +1,7 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { getDashboardStats, getRecentJobs } from '@/services/cases'
 import { ScrapingButton } from '@/components/scraping-button'
+import { StatsCard } from '@/components/StatsCard'
+import { formatDistanceToNow } from 'date-fns'
 
 // Force dynamic rendering - page queries database
 export const dynamic = 'force-dynamic'
@@ -10,114 +11,50 @@ export default async function Dashboard() {
   // Fetch data directly on server - no client-side fetching
   const stats = await getDashboardStats()
   const recentJobs = await getRecentJobs()
+  
+  // Get the most recent job for the "Last scraped" footer
+  const lastScrapedJob = recentJobs.find((job: any) => job.status === 'completed')
+  const lastScrapedHuman = lastScrapedJob?.completedAt 
+    ? formatDistanceToNow(new Date(lastScrapedJob.completedAt), { addSuffix: true })
+    : 'Never'
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="mx-auto max-w-3xl px-4 md:px-6 overflow-x-hidden">
+      {/* Header */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4 mt-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Georgia Probate Filing Monitor
-          </p>
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">Georgia Probate Filing Monitor</p>
         </div>
-        <ScrapingButton />
+        <ScrapingButton className="w-full md:w-auto" />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Cases</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalCases}</div>
-            <p className="text-xs text-muted-foreground">
-              All probate cases in database
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Recent Cases</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.recentCases}</div>
-            <p className="text-xs text-muted-foreground">
-              Filed in last 7 days
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed Jobs</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.completedJobs}</div>
-            <p className="text-xs text-muted-foreground">
-              Successful scraping runs
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Failed Jobs</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">{stats.failedJobs}</div>
-            <p className="text-xs text-muted-foreground">
-              Scraping errors
-            </p>
-          </CardContent>
-        </Card>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <StatsCard 
+          label="Total Cases" 
+          value={stats.totalCases} 
+        />
+        <StatsCard 
+          label="Recent Cases" 
+          value={stats.recentCases} 
+        />
+        <StatsCard 
+          label="Completed Jobs" 
+          value={stats.completedJobs} 
+          tone="success" 
+        />
+        <StatsCard 
+          label="Failed Jobs" 
+          value={stats.failedJobs} 
+          tone="danger" 
+        />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Scraping Jobs</CardTitle>
-          <CardDescription>
-            Latest scraping activity and results
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {recentJobs.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">
-              No scraping jobs found. Start your first scraping job above.
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {recentJobs.map((job: any) => (
-                <div key={job.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-2 h-2 rounded-full ${
-                      job.status === 'completed' ? 'bg-green-500' : 
-                      job.status === 'failed' ? 'bg-red-500' : 
-                      job.status === 'running' ? 'bg-yellow-500' : 'bg-gray-500'
-                    }`} />
-                    <div>
-                      <div className="font-medium capitalize">
-                        {job.county} - {job.source.replace('_', ' ')}
-                      </div>
-                      {job.errorMessage && (
-                        <div className="text-xs text-red-600">{job.errorMessage}</div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-medium">
-                      {job.recordsFound} records
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {job.startedAt ? new Date(job.startedAt).toLocaleDateString() : 'Unknown'}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Footer Status */}
+      <div className="mt-4 pb-8">
+        <p className="text-xs text-muted-foreground">Last scraped: {lastScrapedHuman}</p>
+      </div>
     </div>
   )
 }

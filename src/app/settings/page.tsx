@@ -141,7 +141,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto px-4 md:px-6">
+      <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
         <p className="text-muted-foreground">
@@ -311,6 +312,7 @@ export default function SettingsPage() {
         <Button onClick={saveSettings} disabled={isSaving}>
           {isSaving ? 'Saving...' : 'Save Settings'}
         </Button>
+      </div>
       </div>
     </div>
   )
