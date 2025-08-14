@@ -3,8 +3,9 @@ import { z } from 'zod'
 import { listCases } from '@/services/cases'
 import { CasesTable } from '@/components/cases-table'
 
-// Cache for 5 minutes - adjust based on data freshness needs
-export const revalidate = 300
+// Force dynamic rendering - page queries database
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 const SearchParamsSchema = z.object({
   county: z.string().max(32).optional(),

@@ -2,8 +2,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { getDashboardStats, getRecentJobs } from '@/services/cases'
 import { ScrapingButton } from '@/components/scraping-button'
 
-// Cache for 2 minutes - dashboard data changes frequently
-export const revalidate = 120
+// Force dynamic rendering - page queries database
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 export default async function Dashboard() {
   // Fetch data directly on server - no client-side fetching
