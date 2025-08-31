@@ -4,7 +4,8 @@ import { MobileNav } from '@/components/ui/MobileNav'
 import { NavLink } from '@/components/layout/NavLink'
 
 const navigationLinks = [
-  { href: '/', label: 'Dashboard' },
+  { href: '/', label: 'Home' },
+  { href: '/dashboard', label: 'Dashboard' },
   { href: '/cases', label: 'Cases' },
   { href: '/settings', label: 'Settings' },
   { href: '/admin', label: 'Admin' },
