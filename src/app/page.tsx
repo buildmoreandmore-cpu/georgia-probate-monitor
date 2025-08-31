@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ChevronRightIcon, MagnifyingGlassIcon, DocumentTextIcon, ClockIcon, ShieldCheckIcon, GlobeAltIcon } from '@heroicons/react/24/outline'
+import { ChevronRightIcon, MagnifyingGlassIcon, DocumentTextIcon, ClockIcon, ShieldCheckIcon, GlobeAltIcon, CheckIcon } from '@heroicons/react/24/outline'
 
 export default function LandingPage() {
   return (
@@ -19,14 +19,17 @@ export default function LandingPage() {
         </p>
 
         {/* CTA Button */}
-        <Link 
-          href="/sign-up" 
-          className="inline-flex items-center px-8 py-4 text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-lg transition-colors duration-200"
-        >
-          <MagnifyingGlassIcon className="w-6 h-6 mr-2" />
-          Search Probate Records Now
-          <ChevronRightIcon className="w-5 h-5 ml-2" />
-        </Link>
+        <div className="flex flex-col items-center gap-4">
+          <Link 
+            href="/sign-up" 
+            className="inline-flex items-center px-8 py-4 text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-lg transition-colors duration-200"
+          >
+            <MagnifyingGlassIcon className="w-6 h-6 mr-2" />
+            Start Your $29.99/Month Subscription
+            <ChevronRightIcon className="w-5 h-5 ml-2" />
+          </Link>
+          <p className="text-sm text-gray-600">Cancel anytime • No setup fees</p>
+        </div>
       </div>
 
       {/* Key Benefits Section */}
@@ -98,6 +101,63 @@ export default function LandingPage() {
         </div>
       </div>
 
+      {/* Pricing Section */}
+      <div className="py-12 md:py-16 border-t border-gray-200">
+        <h3 className="text-2xl font-bold text-gray-900 text-center mb-4">
+          Simple, Transparent Pricing
+        </h3>
+        <p className="text-gray-600 text-center mb-12 max-w-2xl mx-auto">
+          Get unlimited access to Georgia probate records with our comprehensive monthly subscription.
+        </p>
+        
+        <div className="max-w-lg mx-auto">
+          <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-8">
+            <div className="text-center mb-6">
+              <h4 className="text-xl font-semibold text-gray-900 mb-2">Professional Access</h4>
+              <div className="flex items-center justify-center">
+                <span className="text-4xl font-bold text-gray-900">$29.99</span>
+                <span className="text-gray-600 ml-2">/month</span>
+              </div>
+            </div>
+            
+            <ul className="space-y-3 mb-8">
+              <li className="flex items-center">
+                <CheckIcon className="w-5 h-5 text-green-600 mr-3" />
+                <span className="text-gray-700">Unlimited probate record searches</span>
+              </li>
+              <li className="flex items-center">
+                <CheckIcon className="w-5 h-5 text-green-600 mr-3" />
+                <span className="text-gray-700">Access to all Georgia counties</span>
+              </li>
+              <li className="flex items-center">
+                <CheckIcon className="w-5 h-5 text-green-600 mr-3" />
+                <span className="text-gray-700">Real-time case monitoring</span>
+              </li>
+              <li className="flex items-center">
+                <CheckIcon className="w-5 h-5 text-green-600 mr-3" />
+                <span className="text-gray-700">Download & export capabilities</span>
+              </li>
+              <li className="flex items-center">
+                <CheckIcon className="w-5 h-5 text-green-600 mr-3" />
+                <span className="text-gray-700">24/7 platform access</span>
+              </li>
+              <li className="flex items-center">
+                <CheckIcon className="w-5 h-5 text-green-600 mr-3" />
+                <span className="text-gray-700">Cancel anytime</span>
+              </li>
+            </ul>
+            
+            <Link 
+              href="/sign-up" 
+              className="w-full inline-flex justify-center items-center px-6 py-3 text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200"
+            >
+              Start Your Subscription
+              <ChevronRightIcon className="w-5 h-5 ml-2" />
+            </Link>
+          </div>
+        </div>
+      </div>
+
       {/* FAQ Section */}
       <div className="py-12 md:py-16 border-t border-gray-200">
         <h3 className="text-2xl font-bold text-gray-900 text-center mb-12">
@@ -149,7 +209,7 @@ export default function LandingPage() {
           className="inline-flex items-center px-8 py-4 text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-lg transition-colors duration-200"
         >
           <MagnifyingGlassIcon className="w-6 h-6 mr-2" />
-          Get Started Now
+          Subscribe for $29.99/Month
           <ChevronRightIcon className="w-5 h-5 ml-2" />
         </Link>
       </div>

@@ -5,9 +5,7 @@ import { NavLink } from '@/components/layout/NavLink'
 import { UserButton, useUser } from '@clerk/nextjs'
 import Link from 'next/link'
 
-const publicLinks = [
-  { href: '/', label: 'Home' },
-]
+const publicLinks: { href: string; label: string }[] = []
 
 const protectedLinks = [
   { href: '/dashboard', label: 'Dashboard' },
