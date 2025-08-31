@@ -37,14 +37,12 @@ export function Navbar() {
                   }}
                 />
               ) : (
-                <div className="flex gap-2">
-                  <Link 
-                    href="/sign-in" 
-                    className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-                  >
-                    Sign In
-                  </Link>
-                </div>
+                <Link 
+                  href="/sign-in" 
+                  className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Sign In
+                </Link>
               )}
             </div>
           )}
@@ -69,20 +67,12 @@ export function Navbar() {
             {isSignedIn ? (
               <UserButton />
             ) : (
-              <div className="flex gap-2">
-                <Link 
-                  href="/sign-in" 
-                  className="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50"
-                >
-                  Sign In
-                </Link>
-                <Link 
-                  href="/sign-up" 
-                  className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                  Sign Up
-                </Link>
-              </div>
+              <Link 
+                href="/sign-in" 
+                className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Sign In
+              </Link>
             )}
           </div>
         )}
