@@ -20,7 +20,7 @@ export default function LandingPage() {
 
         {/* CTA Button */}
         <Link 
-          href="/dashboard" 
+          href="/sign-up" 
           className="inline-flex items-center px-8 py-4 text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-lg transition-colors duration-200"
         >
           <MagnifyingGlassIcon className="w-6 h-6 mr-2" />
@@ -145,7 +145,7 @@ export default function LandingPage() {
         </p>
         
         <Link 
-          href="/dashboard" 
+          href="/sign-up" 
           className="inline-flex items-center px-8 py-4 text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-lg transition-colors duration-200"
         >
           <MagnifyingGlassIcon className="w-6 h-6 mr-2" />
