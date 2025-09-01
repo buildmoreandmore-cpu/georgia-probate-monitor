@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { ChevronRightIcon, MagnifyingGlassIcon, DocumentTextIcon, ClockIcon, ShieldCheckIcon, GlobeAltIcon, CheckIcon } from '@heroicons/react/24/outline'
+import { CheckoutButton } from '@/components/CheckoutButton'
 
 export default function LandingPage() {
   return (
@@ -20,14 +21,7 @@ export default function LandingPage() {
 
         {/* CTA Button */}
         <div className="flex flex-col items-center gap-4">
-          <Link 
-            href="/sign-up" 
-            className="inline-flex items-center px-8 py-4 text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-lg transition-colors duration-200"
-          >
-            <MagnifyingGlassIcon className="w-6 h-6 mr-2" />
-            Start Your $29.99/Month Subscription
-            <ChevronRightIcon className="w-5 h-5 ml-2" />
-          </Link>
+          <CheckoutButton />
           <p className="text-sm text-gray-600">Cancel anytime • No setup fees</p>
         </div>
       </div>
@@ -147,13 +141,12 @@ export default function LandingPage() {
               </li>
             </ul>
             
-            <Link 
-              href="/sign-up" 
-              className="w-full inline-flex justify-center items-center px-6 py-3 text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200"
-            >
-              Start Your Subscription
-              <ChevronRightIcon className="w-5 h-5 ml-2" />
-            </Link>
+            <CheckoutButton className="w-full justify-center">
+              <>
+                Start Your Subscription
+                <ChevronRightIcon className="w-5 h-5 ml-2" />
+              </>
+            </CheckoutButton>
           </div>
         </div>
       </div>
@@ -204,14 +197,13 @@ export default function LandingPage() {
           Start your search for Georgia probate records online today.
         </p>
         
-        <Link 
-          href="/sign-up" 
-          className="inline-flex items-center px-8 py-4 text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-lg transition-colors duration-200"
-        >
-          <MagnifyingGlassIcon className="w-6 h-6 mr-2" />
-          Subscribe for $29.99/Month
-          <ChevronRightIcon className="w-5 h-5 ml-2" />
-        </Link>
+        <CheckoutButton>
+          <>
+            <MagnifyingGlassIcon className="w-6 h-6 mr-2" />
+            Subscribe for $29.99/Month
+            <ChevronRightIcon className="w-5 h-5 ml-2" />
+          </>
+        </CheckoutButton>
       </div>
     </div>
   )

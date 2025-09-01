@@ -120,3 +120,34 @@ model Settings {
   value String
   updatedAt DateTime @updatedAt
 }
+
+model Subscription {
+  id                String    @id @default(cuid())
+  userId            String    @unique  // Clerk user ID
+  stripeCustomerId  String?   @unique
+  stripeSubscriptionId String? @unique
+  stripePriceId     String?
+  status            String    @default("inactive") // active, inactive, canceled, past_due
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  @@index([userId])
+  @@index([status])
+}
+
+model Payment {
+  id               String   @id @default(cuid())
+  userId           String   // Clerk user ID  
+  stripePaymentId  String   @unique
+  amount           Int      // Amount in cents
+  currency         String   @default("usd")
+  status           String   // succeeded, failed, pending
+  description      String?
+  createdAt        DateTime @default(now())
+  
+  @@index([userId])
+  @@index([status])
+}
