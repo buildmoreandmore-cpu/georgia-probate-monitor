@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 export async function GET() {
   try {
     // Test database connection and schema
-    const checks = {
+    const checks: any = {
       connection: false,
       subscriptionTable: false,
       paymentTable: false,
