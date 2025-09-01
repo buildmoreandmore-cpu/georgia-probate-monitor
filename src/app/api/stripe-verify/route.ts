@@ -11,18 +11,20 @@ export async function GET() {
     }
 
     // Test actual Stripe API connection
-    let stripeApiTest = {
+    const stripeApiTest = {
       connected: false,
-      keyType: 'unknown',
+      keyType: 'unknown' as string,
       error: null as string | null
     }
 
     try {
       // Try to retrieve account info to verify the key works
       const account = await stripe.accounts.retrieve()
-      stripeApiTest.connected = true
-      stripeApiTest.keyType = process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_') ? 'LIVE' : 
-                            process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_') ? 'TEST' : 'UNKNOWN'
+      Object.assign(stripeApiTest, {
+        connected: true,
+        keyType: process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_') ? 'LIVE' : 
+                process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_') ? 'TEST' : 'UNKNOWN'
+      })
       
       return NextResponse.json({
         status: 'success',
@@ -36,7 +38,7 @@ export async function GET() {
         timestamp: new Date().toISOString(),
       })
     } catch (error: any) {
-      stripeApiTest.error = error.message
+      Object.assign(stripeApiTest, { error: error.message })
       
       return NextResponse.json({
         status: 'partial',
