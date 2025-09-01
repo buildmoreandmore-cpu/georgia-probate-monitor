@@ -14,7 +14,7 @@ export async function GET() {
     }
 
     // Test database connectivity and get basic info
-    let connectionTest = {
+    const connectionTest = {
       connected: false,
       error: null as string | null,
       tableCount: 0,
@@ -25,7 +25,7 @@ export async function GET() {
     try {
       // Test basic connection
       await prisma.$queryRaw`SELECT 1`
-      connectionTest.connected = true
+      Object.assign(connectionTest, { connected: true })
 
       // Get table count
       const tables = await prisma.$queryRaw<Array<{count: number}>>`
@@ -33,22 +33,22 @@ export async function GET() {
         FROM information_schema.tables 
         WHERE table_schema = 'public'
       `
-      connectionTest.tableCount = Number(tables[0]?.count || 0)
+      Object.assign(connectionTest, { tableCount: Number(tables[0]?.count || 0) })
 
       // Check case count
       const caseCount = await prisma.case.count()
-      connectionTest.caseCount = caseCount
+      Object.assign(connectionTest, { caseCount })
 
       // Check if subscription table exists
       try {
         await prisma.subscription.findMany({ take: 1 })
-        connectionTest.subscriptionTableExists = true
+        Object.assign(connectionTest, { subscriptionTableExists: true })
       } catch {
-        connectionTest.subscriptionTableExists = false
+        Object.assign(connectionTest, { subscriptionTableExists: false })
       }
 
     } catch (error: any) {
-      connectionTest.error = error.message
+      Object.assign(connectionTest, { error: error.message })
     }
 
     return NextResponse.json({
