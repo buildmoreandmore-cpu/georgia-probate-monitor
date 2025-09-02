@@ -12,10 +12,12 @@ interface CheckoutButtonProps {
 }
 
 export function CheckoutButton({ 
-  priceId = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID || 'price_test_monthly', 
+  priceId, 
   className = '',
   children
 }: CheckoutButtonProps) {
+  // Use provided priceId or fallback to environment variable or default
+  const effectivePriceId = priceId || process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID || 'price_test_monthly'
   const [loading, setLoading] = useState(false)
   const { isSignedIn, user } = useUser()
 
@@ -35,7 +37,7 @@ export function CheckoutButton({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          priceId,
+          priceId: effectivePriceId,
           successUrl: `${window.location.origin}/dashboard?success=true`,
           cancelUrl: `${window.location.origin}/?canceled=true`,
         }),
