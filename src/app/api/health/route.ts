@@ -1,32 +1,19 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-export async function GET(_request: NextRequest) {
+export async function GET() {
   try {
-    // Skip database operations during build
-    if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL) {
-      return NextResponse.json({
-        status: 'build-time',
-        timestamp: new Date().toISOString(),
-        database: 'skipped-during-build',
-        environment: process.env.NODE_ENV,
-        deployment: process.env.VERCEL ? 'vercel' : 'local'
-      })
-    }
-
-    // Test database connection
-    const caseCount = await prisma.case.count()
+    const result = await prisma.$queryRaw<Array<{ now: Date }>>`SELECT NOW() as now`
     
     return NextResponse.json({
       status: 'healthy',
-      timestamp: new Date().toISOString(),
+      timestamp: result[0].now,
       database: 'connected',
-      cases: caseCount,
-      environment: process.env.NODE_ENV,
-      deployment: process.env.VERCEL ? 'vercel' : 'local'
+      environment: process.env.NODE_ENV || 'development',
+      deployment: process.env.VERCEL_ENV || 'local'
     })
   } catch (error) {
     console.error('Health check failed:', error)
@@ -35,7 +22,9 @@ export async function GET(_request: NextRequest) {
       status: 'unhealthy',
       timestamp: new Date().toISOString(),
       database: 'disconnected',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
+      environment: process.env.NODE_ENV || 'development',
+      deployment: process.env.VERCEL_ENV || 'local'
     }, { status: 500 })
   }
 }

@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useUser } from '@clerk/nextjs'
+import { isAdminUser } from '@/lib/admin'
 
 // Settings page needs interactivity, so it's intentionally dynamic
 export const dynamic = 'force-dynamic'
@@ -25,6 +27,7 @@ interface PhoneUpload {
 }
 
 export default function SettingsPage() {
+  const { isLoaded, user } = useUser()
   const [settings, setSettings] = useState<Settings>({
     address_provider: 'free',
     phone_provider: 'csv',
@@ -39,10 +42,38 @@ export default function SettingsPage() {
   const [isSaving, setSaving] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
 
+  // Check if current user is admin
+  const isAdmin = isAdminUser(user?.primaryEmailAddress?.emailAddress)
+
   useEffect(() => {
-    fetchSettings()
-    fetchPhoneUploads()
-  }, [])
+    if (isLoaded && isAdmin) {
+      fetchSettings()
+      fetchPhoneUploads()
+    }
+  }, [isLoaded, isAdmin])
+
+  // Show loading while Clerk is loading
+  if (!isLoaded) {
+    return <div className="flex justify-center items-center h-64">Loading...</div>
+  }
+
+  // Show access denied if not admin
+  if (!isAdmin) {
+    return (
+      <div className="container mx-auto px-4 md:px-6">
+        <div className="flex flex-col items-center justify-center h-64 space-y-4">
+          <div className="text-6xl">🔒</div>
+          <h1 className="text-2xl font-bold text-red-600">Access Denied</h1>
+          <p className="text-muted-foreground text-center max-w-md">
+            You don&apos;t have permission to access settings. Only administrators can modify system settings.
+          </p>
+          <Button onClick={() => window.location.href = '/dashboard'}>
+            Go to Dashboard
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   const fetchSettings = async () => {
     try {

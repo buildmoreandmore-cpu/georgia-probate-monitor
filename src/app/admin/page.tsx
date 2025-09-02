@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useUser } from '@clerk/nextjs'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { isAdminUser } from '@/lib/admin'
 
 interface SystemHealth {
   status: string
@@ -14,8 +16,12 @@ interface SystemHealth {
 }
 
 export default function AdminPage() {
+  const { isLoaded, user } = useUser()
   const [health, setHealth] = useState<SystemHealth | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+
+  // Check if current user is admin
+  const isAdmin = isAdminUser(user?.primaryEmailAddress?.emailAddress)
 
   useEffect(() => {
     checkHealth()
@@ -68,6 +74,29 @@ export default function AdminPage() {
       console.error('Database clear failed:', error)
       alert('Database clear failed')
     }
+  }
+
+  // Show loading while Clerk is loading
+  if (!isLoaded) {
+    return <div className="flex justify-center items-center h-64">Loading...</div>
+  }
+
+  // Show access denied if not admin
+  if (!isAdmin) {
+    return (
+      <div className="container mx-auto px-4 md:px-6">
+        <div className="flex flex-col items-center justify-center h-64 space-y-4">
+          <div className="text-6xl">🔒</div>
+          <h1 className="text-2xl font-bold text-red-600">Access Denied</h1>
+          <p className="text-muted-foreground text-center max-w-md">
+            You don&apos;t have permission to access this page. Only administrators can view this content.
+          </p>
+          <Button onClick={() => window.location.href = '/dashboard'}>
+            Go to Dashboard
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   if (isLoading) {

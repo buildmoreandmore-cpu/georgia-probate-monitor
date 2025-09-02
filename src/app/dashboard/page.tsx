@@ -1,38 +1,42 @@
-import { getDashboardStats, getRecentJobs } from '@/services/cases'
-import { ScrapingButton } from '@/components/scraping-button'
+'use client'
+
+import { useUser } from '@clerk/nextjs'
 import { StatsCard } from '@/components/StatsCard'
-import { SubscriptionStatus } from '@/components/SubscriptionStatus'
-import { formatDistanceToNow } from 'date-fns'
-import { currentUser } from '@clerk/nextjs/server'
-import { prisma } from '@/lib/prisma'
 
-// Force dynamic rendering - page queries database
-export const dynamic = 'force-dynamic'
-export const runtime = 'nodejs'
+export default function Dashboard() {
+  const { isLoaded, isSignedIn } = useUser()
 
-export default async function Dashboard() {
-  const user = await currentUser()
-  
-  if (!user) {
-    return <div>Please sign in to access the dashboard</div>
+  // Show loading state while Clerk loads
+  if (!isLoaded) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 md:px-6 overflow-x-hidden">
+        <div className="text-center py-12">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/4 mx-auto mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
-  // Check subscription status
-  const subscription = await prisma.subscription.findUnique({
-    where: { userId: user.id },
-  })
-
-  const hasActiveSubscription = subscription && subscription.status === 'active'
-
-  // Fetch data directly on server - no client-side fetching
-  const stats = await getDashboardStats()
-  const recentJobs = await getRecentJobs()
-  
-  // Get the most recent job for the "Last scraped" footer
-  const lastScrapedJob = recentJobs.find((job: any) => job.status === 'completed')
-  const lastScrapedHuman = lastScrapedJob?.completedAt 
-    ? formatDistanceToNow(new Date(lastScrapedJob.completedAt), { addSuffix: true })
-    : 'Never'
+  // Redirect to sign in if not authenticated
+  if (!isSignedIn) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 md:px-6 overflow-x-hidden">
+        <div className="text-center py-12">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Please Sign In</h1>
+          <p className="text-gray-600 mb-6">You need to be signed in to access the dashboard.</p>
+          <a 
+            href="/sign-in"
+            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+          >
+            Sign In
+          </a>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto max-w-3xl px-4 md:px-6 overflow-x-hidden">
@@ -42,53 +46,55 @@ export default async function Dashboard() {
           <h1 className="text-2xl font-bold">Dashboard</h1>
           <p className="text-sm text-muted-foreground">Georgia Probate Filing Monitor</p>
         </div>
-        {hasActiveSubscription && <ScrapingButton className="w-full md:w-auto" />}
+        {/* Scraping button temporarily disabled */}
       </div>
 
       {/* Subscription Status */}
       <div className="mb-6">
-        <SubscriptionStatus />
-      </div>
-
-      {hasActiveSubscription ? (
-        <>
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <StatsCard 
-              label="Total Cases" 
-              value={stats.totalCases} 
-            />
-            <StatsCard 
-              label="Recent Cases" 
-              value={stats.recentCases} 
-            />
-            <StatsCard 
-              label="Completed Jobs" 
-              value={stats.completedJobs} 
-              tone="success" 
-            />
-            <StatsCard 
-              label="Failed Jobs" 
-              value={stats.failedJobs} 
-              tone="danger" 
-            />
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center mb-4">
+            <div className="w-6 h-6 text-orange-500 mr-2">🔧</div>
+            <h3 className="text-lg font-semibold text-gray-900">System Status</h3>
           </div>
-
-          {/* Footer Status */}
-          <div className="mt-4 pb-8">
-            <p className="text-xs text-muted-foreground">Last scraped: {lastScrapedHuman}</p>
-          </div>
-        </>
-      ) : (
-        <div className="bg-gray-50 rounded-lg p-8 text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Subscription Required
-          </h2>
-          <p className="text-gray-600 mb-6">
-            You need an active subscription to access probate records and scraping functionality.
+          <p className="text-gray-600">
+            Database is temporarily unavailable. Subscription features are disabled until connection is restored.
           </p>
         </div>
-      )}
+      </div>
+
+      {/* Demo Stats - Database temporarily unavailable */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <StatsCard 
+          label="Total Cases" 
+          value="--" 
+        />
+        <StatsCard 
+          label="Recent Cases" 
+          value="--" 
+        />
+        <StatsCard 
+          label="System Status" 
+          value="Maintenance" 
+          tone="danger" 
+        />
+        <StatsCard 
+          label="Database" 
+          value="Reconnecting" 
+          tone="danger" 
+        />
+      </div>
+
+      <div className="bg-blue-50 rounded-lg p-6 text-center">
+        <h2 className="text-xl font-semibold text-blue-900 mb-4">
+          🛠️ System Maintenance
+        </h2>
+        <p className="text-blue-800 mb-4">
+          The database is temporarily undergoing maintenance. Full functionality will be restored shortly.
+        </p>
+        <p className="text-blue-700 text-sm">
+          You can still navigate the site and access other features. Subscription and data features will return once maintenance is complete.
+        </p>
+      </div>
     </div>
   )
 }

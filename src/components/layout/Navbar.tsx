@@ -4,20 +4,30 @@ import { MobileNav } from '@/components/ui/MobileNav'
 import { NavLink } from '@/components/layout/NavLink'
 import { UserButton, useUser } from '@clerk/nextjs'
 import Link from 'next/link'
+import { isAdminUser } from '@/lib/admin'
 
 const publicLinks: { href: string; label: string }[] = []
 
-const protectedLinks = [
+const regularLinks = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/cases', label: 'Cases' },
+]
+
+const adminLinks = [
   { href: '/settings', label: 'Settings' },
   { href: '/admin', label: 'Admin' },
 ]
 
 export function Navbar() {
-  const { isSignedIn, isLoaded } = useUser()
+  const { isSignedIn, user } = useUser()
 
-  const currentLinks = isSignedIn ? [...publicLinks, ...protectedLinks] : publicLinks
+  // Check if current user is admin
+  const isAdmin = isAdminUser(user?.primaryEmailAddress?.emailAddress)
+
+  // Build links based on user role
+  const currentLinks = isSignedIn 
+    ? [...publicLinks, ...regularLinks, ...(isAdmin ? adminLinks : [])]
+    : publicLinks
 
   return (
     <nav className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -26,26 +36,24 @@ export function Navbar() {
         <span className="text-base font-semibold">GA Probate</span>
         <div className="flex items-center gap-4">
           <MobileNav links={currentLinks} />
-          {isLoaded && (
-            <div className="ml-2">
-              {isSignedIn ? (
-                <UserButton 
-                  appearance={{
-                    elements: {
-                      avatarBox: 'w-8 h-8'
-                    }
-                  }}
-                />
-              ) : (
-                <Link 
-                  href="/sign-in" 
-                  className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                  Sign In
-                </Link>
-              )}
-            </div>
-          )}
+          <div className="ml-2">
+            {isSignedIn ? (
+              <UserButton 
+                appearance={{
+                  elements: {
+                    avatarBox: 'w-8 h-8'
+                  }
+                }}
+              />
+            ) : (
+              <Link 
+                href="/sign-in" 
+                className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Sign In
+              </Link>
+            )}
+          </div>
         </div>
       </div>
 
@@ -62,20 +70,18 @@ export function Navbar() {
           </div>
         </div>
         
-        {isLoaded && (
-          <div className="flex items-center gap-4">
-            {isSignedIn ? (
-              <UserButton />
-            ) : (
-              <Link 
-                href="/sign-in" 
-                className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Sign In
-              </Link>
-            )}
-          </div>
-        )}
+        <div className="flex items-center gap-4">
+          {isSignedIn ? (
+            <UserButton />
+          ) : (
+            <Link 
+              href="/sign-in" 
+              className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Sign In
+            </Link>
+          )}
+        </div>
       </div>
     </nav>
   )
