@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { Navbar } from '@/components/layout/Navbar'
 import { ClerkProvider } from '@clerk/nextjs'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -20,12 +21,14 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body className={`${inter.className} overflow-x-hidden`}>
-          <div className="min-h-screen bg-background">
-            <Navbar />
-            <main className="py-6">
-              {children}
-            </main>
-          </div>
+          <ErrorBoundary>
+            <div className="min-h-screen bg-background">
+              <Navbar />
+              <main className="py-6">
+                {children}
+              </main>
+            </div>
+          </ErrorBoundary>
         </body>
       </html>
     </ClerkProvider>
