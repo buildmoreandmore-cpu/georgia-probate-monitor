@@ -7,7 +7,16 @@
     "scrape": "tsx scrape-runner.ts",
     "scrape:georgia": "tsx scrape-runner.ts georgia_probate_records",
     "scrape:cobb": "tsx scrape-runner.ts cobb_probate",
-    "scrape:all": "tsx scrape-runner.ts georgia_probate_records cobb_probate",
+    "scrape:qpublic:cobb": "tsx scrape-runner.ts qpublic_cobb",
+    "scrape:qpublic:dekalb": "tsx scrape-runner.ts qpublic_dekalb",
+    "scrape:qpublic:fulton": "tsx scrape-runner.ts qpublic_fulton",
+    "scrape:qpublic:fayette": "tsx scrape-runner.ts qpublic_fayette",
+    "scrape:qpublic:newton": "tsx scrape-runner.ts qpublic_newton",
+    "scrape:qpublic:douglas": "tsx scrape-runner.ts qpublic_douglas",
+    "scrape:qpublic:gwinnett": "tsx scrape-runner.ts qpublic_gwinnett",
+    "scrape:qpublic:all": "tsx scrape-runner.ts qpublic_all",
+    "scrape:probate": "tsx scrape-runner.ts georgia_probate_records cobb_probate",
+    "scrape:all": "tsx scrape-runner.ts georgia_probate_records cobb_probate qpublic_all",
     "install-deps": "npm install playwright tsx dotenv node-fetch @types/node"
   },
   "dependencies": {

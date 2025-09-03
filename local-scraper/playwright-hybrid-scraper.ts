@@ -28,6 +28,7 @@ export interface ScrapedProperty {
 
 export class HybridPlaywrightScraper {
   private browser: Browser | null = null
+  private context: any = null
   private storageDir = './scraped-data'
   private vercelApiUrl: string
 
@@ -39,8 +40,19 @@ export class HybridPlaywrightScraper {
   async initialize(): Promise<void> {
     console.log('🚀 Initializing Playwright browser...')
     this.browser = await chromium.launch({
-      headless: false, // Show browser for debugging
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      headless: false, // Show browser for debugging and CAPTCHA solving
+      args: [
+        '--no-sandbox', 
+        '--disable-setuid-sandbox',
+        '--disable-blink-features=AutomationControlled', // Hide automation detection
+        '--disable-web-security',
+        '--no-first-run'
+      ]
+    })
+    
+    // Set a realistic user agent to avoid detection
+    this.context = await this.browser.newContext({
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     })
   }
 
@@ -59,6 +71,34 @@ export class HybridPlaywrightScraper {
             break
           case 'cobb_probate':
             cases = await this.scrapeCobb(dateFrom)
+            break
+          case 'qpublic_cobb':
+            cases = await this.scrapeQPublicCounty('cobb', dateFrom)
+            break
+          case 'qpublic_dekalb':
+            cases = await this.scrapeQPublicCounty('dekalb', dateFrom)
+            break
+          case 'qpublic_fulton':
+            cases = await this.scrapeQPublicCounty('fulton', dateFrom)
+            break
+          case 'qpublic_fayette':
+            cases = await this.scrapeQPublicCounty('fayette', dateFrom)
+            break
+          case 'qpublic_newton':
+            cases = await this.scrapeQPublicCounty('newton', dateFrom)
+            break
+          case 'qpublic_douglas':
+            cases = await this.scrapeQPublicCounty('douglas', dateFrom)
+            break
+          case 'qpublic_gwinnett':
+            cases = await this.scrapeQPublicCounty('gwinnett', dateFrom)
+            break
+          case 'qpublic_all':
+            const counties = ['cobb', 'dekalb', 'fulton', 'fayette', 'newton', 'douglas', 'gwinnett']
+            for (const county of counties) {
+              const countyCases = await this.scrapeQPublicCounty(county, dateFrom)
+              cases.push(...countyCases)
+            }
             break
           default:
             console.warn(`❓ Unknown site: ${site}`)
@@ -81,7 +121,7 @@ export class HybridPlaywrightScraper {
   private async scrapeGeorgiaProbateRecords(dateFrom?: Date): Promise<ScrapedCase[]> {
     if (!this.browser) throw new Error('Browser not initialized')
     
-    const page = await this.browser.newPage()
+    const page = await (this.context || this.browser).newPage()
     const cases: ScrapedCase[] = []
     
     try {
@@ -131,39 +171,47 @@ export class HybridPlaywrightScraper {
 
       console.log(`📅 Searching for filings/deaths from ${startDateStr} to ${endDateStr}...`)
       
-      // Try to select a county to increase chances of finding records
+      // Try to select one of the target counties: Henry, Clayton, or Douglas
+      const targetCounties = ['Henry', 'Clayton', 'Douglas']
+      let selectedCounty = null
+      
       try {
         const countyDropdown = page.locator('#ctl00_cpMain_ddlCounty')
         if (await countyDropdown.isVisible({ timeout: 3000 })) {
-          console.log('🏛️ Attempting to select Fulton county for search...')
+          console.log('🏛️ Attempting to select target county (Henry, Clayton, or Douglas)...')
           await countyDropdown.click()
           await page.waitForTimeout(2000)
           
-          // Try multiple ways to find Fulton in the dropdown
-          const fultonSelectors = [
-            'li:has-text("Fulton")',
-            '.rddlItem:has-text("Fulton")',
-            'li.rddlItem:has-text("Fulton")'
-          ]
-          
-          let selected = false
-          for (const selector of fultonSelectors) {
-            try {
-              const option = page.locator(selector).first()
-              if (await option.isVisible({ timeout: 2000 })) {
-                await option.click()
-                selected = true
-                console.log('✅ Selected Fulton county')
-                await page.waitForTimeout(1000)
-                break
+          // Try each target county in order of priority
+          for (const county of targetCounties) {
+            const countySelectors = [
+              `li:has-text("${county}")`,
+              `.rddlItem:has-text("${county}")`,
+              `li.rddlItem:has-text("${county}")`
+            ]
+            
+            let selected = false
+            for (const selector of countySelectors) {
+              try {
+                const option = page.locator(selector).first()
+                if (await option.isVisible({ timeout: 2000 })) {
+                  await option.click()
+                  selected = true
+                  selectedCounty = county
+                  console.log(`✅ Selected ${county} county`)
+                  await page.waitForTimeout(1000)
+                  break
+                }
+              } catch (e) {
+                continue
               }
-            } catch (e) {
-              continue
             }
+            
+            if (selected) break
           }
           
-          if (!selected) {
-            console.log('⚠️  Could not select county, continuing with all counties')
+          if (!selectedCounty) {
+            console.log('⚠️  Could not select target counties (Henry/Clayton/Douglas), continuing with all counties')
             await page.keyboard.press('Escape') // Close dropdown
           }
         }
@@ -542,9 +590,270 @@ export class HybridPlaywrightScraper {
     }
   }
 
-  private async scrapeCobb(_dateFrom?: Date): Promise<ScrapedCase[]> {
-    console.log('🏛️  Cobb County scraping not yet implemented')
-    return []
+  private async scrapeCobb(dateFrom?: Date): Promise<ScrapedCase[]> {
+    if (!this.browser) throw new Error('Browser not initialized')
+
+    console.log('🏛️ Starting Cobb County probate scraping...')
+    
+    const page = await (this.context || this.browser).newPage()
+    const cases: ScrapedCase[] = []
+
+    try {
+      // Navigate to Cobb Probate Court
+      await page.goto('https://probateonline.cobbcounty.org/BenchmarkWeb/Home.aspx/Search', {
+        waitUntil: 'networkidle',
+        timeout: 30000
+      })
+
+      console.log('🌐 Navigating to Cobb Probate Court...')
+
+      // Wait for the search form to load
+      await page.waitForSelector('input[type="submit"], button[type="submit"], .search-button', { timeout: 10000 })
+
+      // Handle any CAPTCHAs that appear
+      await this.handleCaptcha(page, 'Cobb County')
+
+      // Set date range if provided
+      if (dateFrom) {
+        const dateStr = dateFrom.toLocaleDateString('en-US', { 
+          month: '2-digit', 
+          day: '2-digit', 
+          year: 'numeric' 
+        })
+        
+        console.log(`📅 Setting date range from ${dateStr}...`)
+        
+        // Try to find and fill date fields
+        const dateFields = await page.locator('input[type="date"], input[name*="date"], input[id*="date"]').all()
+        for (const field of dateFields) {
+          try {
+            await field.fill(dateStr)
+          } catch (error) {
+            console.warn('⚠️ Could not fill date field:', error)
+          }
+        }
+      }
+
+      // Look for and click search button
+      const searchButton = page.locator('input[type="submit"], button[type="submit"], .search-button, [value*="Search"]').first()
+      
+      if (await searchButton.isVisible({ timeout: 3000 })) {
+        console.log('🔍 Clicking search button...')
+        await searchButton.click()
+        
+        // Wait for results
+        await page.waitForTimeout(3000)
+        
+        // Try to extract results
+        const resultRows = await page.locator('tr:has-text("Probate"), .result-row, table tr:not(:first-child)').all()
+        
+        console.log(`📋 Found ${resultRows.length} potential result rows`)
+        
+        for (let i = 0; i < Math.min(resultRows.length, 50); i++) {
+          try {
+            const row = resultRows[i]
+            const text = await row.textContent()
+            
+            if (text && text.toLowerCase().includes('probate')) {
+              // Extract case information from the row
+              const caseNumber = await row.locator('td:nth-child(1), .case-number').textContent() || `COBB-${Date.now()}-${i}`
+              const decedentName = await row.locator('td:nth-child(2), .decedent-name').textContent() || 'Unknown Decedent'
+              
+              cases.push({
+                caseId: `cobb-${caseNumber}`,
+                county: 'Cobb',
+                filingDate: dateFrom || new Date(),
+                decedentName: decedentName.trim(),
+                caseNumber: caseNumber.trim(),
+                courtUrl: page.url(),
+                properties: []
+              })
+            }
+          } catch (error) {
+            console.warn(`⚠️ Error processing Cobb result row ${i}:`, error)
+          }
+        }
+        
+      } else {
+        console.log('⚠️ Could not find search button on Cobb site')
+      }
+
+      // Save results HTML for debugging
+      const htmlContent = await page.content()
+      const timestamp = Date.now()
+      writeFileSync(join(this.storageDir, `cobb-search-${timestamp}.html`), htmlContent)
+      console.log(`💾 Saved Cobb search results HTML: cobb-search-${timestamp}.html`)
+
+    } catch (error) {
+      console.error('❌ Error scraping Cobb County:', error)
+    } finally {
+      await page.close()
+    }
+
+    console.log(`✅ Cobb County scraping completed. Found ${cases.length} cases`)
+    return cases
+  }
+
+  private async scrapeQPublicCounty(county: string, dateFrom?: Date): Promise<ScrapedCase[]> {
+    if (!this.browser) throw new Error('Browser not initialized')
+
+    console.log(`🏘️ Starting QPublic ${county} property scraping...`)
+    
+    const page = await (this.context || this.browser).newPage()
+    const cases: ScrapedCase[] = []
+
+    // QPublic URLs for each county
+    const qpublicUrls: Record<string, string> = {
+      'cobb': 'https://qpublic.schneidercorp.com/Application.aspx?AppID=1051&LayerID=23951&PageTypeID=2&PageID=9967',
+      'dekalb': 'https://qpublic.schneidercorp.com/Application.aspx?AppID=994&LayerID=20256&PageTypeID=2&PageID=8822',
+      'fulton': 'https://qpublic.schneidercorp.com/Application.aspx?App=FultonCountyGA&Layer=Parcels&PageType=Search',
+      'fayette': 'https://qpublic.schneidercorp.com/Application.aspx?AppID=942&LayerID=18406&PageTypeID=2&PageID=8204',
+      'newton': 'https://qpublic.schneidercorp.com/Application.aspx?AppID=794&LayerID=11825&PageID=5724',
+      'douglas': 'https://qpublic.schneidercorp.com/Application.aspx?AppID=988&LayerID=20162&PageID=8760',
+      'gwinnett': 'https://qpublic.schneidercorp.com/Application.aspx?AppID=1282&LayerID=43872&PageID=16058'
+    }
+
+    const url = qpublicUrls[county.toLowerCase()]
+    if (!url) {
+      console.log(`⚠️ No QPublic URL configured for county: ${county}`)
+      await page.close()
+      return cases
+    }
+
+    try {
+      console.log(`🌐 Navigating to QPublic ${county}...`)
+      await page.goto(url, {
+        waitUntil: 'networkidle',
+        timeout: 30000
+      })
+
+      // Wait for search form to load
+      await page.waitForTimeout(3000)
+
+      // Handle any CAPTCHAs that appear
+      await this.handleCaptcha(page, `QPublic ${county}`)
+
+      // Look for property search functionality
+      // QPublic sites typically have search forms for property owners
+      const searchInputs = await page.locator('input[type="text"], input[name*="owner"], input[name*="search"]').all()
+      
+      if (searchInputs.length > 0) {
+        console.log(`🔍 Found ${searchInputs.length} search inputs on QPublic ${county}`)
+        
+        // Search for recent property transactions that might indicate estate activity
+        // This is a property records site, so we're looking for ownership changes
+        const searchTerms = ['estate', 'deceased', 'probate', 'trust', 'heirs']
+        
+        for (let i = 0; i < Math.min(searchTerms.length, 3); i++) {
+          try {
+            const searchTerm = searchTerms[i]
+            console.log(`🔍 Searching QPublic ${county} for: ${searchTerm}`)
+            
+            // Fill the first available search input
+            await searchInputs[0].clear()
+            await searchInputs[0].fill(searchTerm)
+            
+            // Look for and click search button
+            const searchButton = page.locator('input[type="submit"], button[type="submit"], [value*="Search"], .search-btn').first()
+            
+            if (await searchButton.isVisible({ timeout: 3000 })) {
+              await searchButton.click()
+              await page.waitForTimeout(2000)
+              
+              // Try to extract property results
+              const propertyRows = await page.locator('tr:has(td), .property-result, .result-row').all()
+              
+              console.log(`📋 Found ${propertyRows.length} property results for "${searchTerm}"`)
+              
+              for (let j = 0; j < Math.min(propertyRows.length, 10); j++) {
+                try {
+                  const row = propertyRows[j]
+                  const text = await row.textContent()
+                  
+                  if (text && (text.toLowerCase().includes('estate') || text.toLowerCase().includes('deceased'))) {
+                    // Extract property owner information that might indicate probate activity
+                    const ownerName = await row.locator('td:nth-child(1), .owner-name').textContent() || 'Unknown Owner'
+                    const address = await row.locator('td:nth-child(2), .property-address').textContent() || 'Unknown Address'
+                    
+                    // Create a "case" entry for properties that might be related to probate
+                    cases.push({
+                      caseId: `qpublic-${county}-${Date.now()}-${j}`,
+                      county: county.charAt(0).toUpperCase() + county.slice(1),
+                      filingDate: dateFrom || new Date(),
+                      decedentName: ownerName.trim(),
+                      caseNumber: `QPUB-${county.toUpperCase()}-${j}`,
+                      courtUrl: page.url(),
+                      properties: [{
+                        parcelId: `${county}-${j}`,
+                        situsAddress: address.trim(),
+                        currentOwner: ownerName.trim(),
+                        qpublicUrl: page.url()
+                      }]
+                    })
+                  }
+                } catch (error) {
+                  console.warn(`⚠️ Error processing QPublic ${county} result ${j}:`, error)
+                }
+              }
+            }
+            
+            // Small delay between searches
+            await page.waitForTimeout(1000)
+            
+          } catch (error) {
+            console.warn(`⚠️ Error searching QPublic ${county} for "${searchTerms[i]}":`, error)
+          }
+        }
+      } else {
+        console.log(`⚠️ No search inputs found on QPublic ${county} site`)
+      }
+
+      // Save results HTML for debugging
+      const htmlContent = await page.content()
+      const timestamp = Date.now()
+      writeFileSync(join(this.storageDir, `qpublic-${county}-${timestamp}.html`), htmlContent)
+      console.log(`💾 Saved QPublic ${county} HTML: qpublic-${county}-${timestamp}.html`)
+
+    } catch (error) {
+      console.error(`❌ Error scraping QPublic ${county}:`, error)
+    } finally {
+      await page.close()
+    }
+
+    console.log(`✅ QPublic ${county} scraping completed. Found ${cases.length} property records`)
+    return cases
+  }
+
+  private async handleCaptcha(page: any, siteName: string): Promise<void> {
+    // Check for various CAPTCHA types
+    const captchaSelectors = [
+      'iframe[src*="recaptcha"]',
+      '.g-recaptcha',
+      '[data-sitekey]',
+      '#captcha',
+      '.captcha',
+      'input[name*="captcha"]'
+    ]
+
+    let captchaFound = false
+    for (const selector of captchaSelectors) {
+      if (await page.locator(selector).isVisible({ timeout: 2000 }).catch(() => false)) {
+        captchaFound = true
+        console.log(`🤖 CAPTCHA detected on ${siteName} site (${selector})`)
+        break
+      }
+    }
+
+    if (captchaFound) {
+      console.log('⏸️  CAPTCHA found! Browser window is visible - please solve it manually.')
+      console.log('⏳ Waiting 60 seconds for manual CAPTCHA solving...')
+      console.log('🔍 After solving, the scraper will automatically continue...')
+      
+      // Give user time to solve CAPTCHA
+      await page.waitForTimeout(60000) // 60 seconds
+      
+      console.log('✅ Continuing after CAPTCHA pause...')
+    }
   }
 
   private async uploadCasesToVercel(cases: ScrapedCase[]): Promise<void> {
