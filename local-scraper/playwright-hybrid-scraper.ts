@@ -7,6 +7,7 @@ export interface ScrapedCase {
   caseId: string
   county: string
   filingDate: Date
+  diedDate?: Date
   decedentName: string
   petitioner?: string
   executor?: string
@@ -153,10 +154,10 @@ export class HybridPlaywrightScraper {
         console.log('ℹ️  No terms modal found, continuing...')
       }
 
-      // Search for today only to find the records you mentioned
+      // Search for 2025 filed dates only (ignore death dates)
       const searchDate = dateFrom || new Date()
-      const startDate = new Date(searchDate)
-      const endDate = new Date(searchDate)
+      const startDate = new Date('2025-01-01')  // Start from 2025
+      const endDate = new Date('2025-09-02')    // End at today
       
       const startDateStr = startDate.toLocaleDateString('en-US', { 
         month: '2-digit', 
@@ -172,7 +173,7 @@ export class HybridPlaywrightScraper {
       console.log(`📅 Searching for filings/deaths from ${startDateStr} to ${endDateStr}...`)
       
       // Try to select one of the target counties: Henry, Clayton, or Douglas
-      const targetCounties = ['Henry', 'Clayton', 'Douglas']
+      const targetCounties = ['Clayton', 'Douglas', 'Henry']
       let selectedCounty = null
       
       try {
@@ -219,7 +220,7 @@ export class HybridPlaywrightScraper {
         console.log('⚠️  County selection failed, continuing with all counties')
       }
       
-      // Fill both filed date AND deceased date fields to maximize coverage
+      // Fill ONLY Filed Date fields to search by filing date only
       const dateFieldPairs = [
         {
           type: 'Filed Date',
@@ -230,17 +231,6 @@ export class HybridPlaywrightScraper {
           end: [
             'input[id="ctl00_cpMain_txtFiledEndDate_dateInput"]',
             'input[id*="txtFiledEndDate_dateInput"]'
-          ]
-        },
-        {
-          type: 'Deceased Date', 
-          start: [
-            'input[id="ctl00_cpMain_txtDeceasedStartDate_dateInput"]',
-            'input[id*="txtDeceasedStartDate_dateInput"]'
-          ],
-          end: [
-            'input[id="ctl00_cpMain_txtDeceasedEndDate_dateInput"]',
-            'input[id*="txtDeceasedEndDate_dateInput"]'
           ]
         }
       ]

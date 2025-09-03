@@ -16,15 +16,25 @@
     "scrape:qpublic:gwinnett": "tsx scrape-runner.ts qpublic_gwinnett",
     "scrape:qpublic:all": "tsx scrape-runner.ts qpublic_all",
     "scrape:probate": "tsx scrape-runner.ts georgia_probate_records cobb_probate",
-    "scrape:all": "tsx scrape-runner.ts georgia_probate_records cobb_probate qpublic_all",
+    "scrape:old-all": "tsx scrape-runner.ts georgia_probate_records cobb_probate qpublic_all",
     "scrape:database": "tsx database-scraper.ts",
-    "scrape:database:georgia": "tsx database-scraper.ts georgia_probate_records",
-    "scrape:database:cobb": "tsx database-scraper.ts cobb_probate",
-    "scrape:database:all": "tsx database-scraper.ts georgia_probate_records cobb_probate qpublic_all",
+    "db:probate:georgia": "tsx database-scraper.ts georgia_probate_records",
+    "db:probate:cobb": "tsx database-scraper.ts cobb_probate",
+    "db:qpublic:cobb": "tsx database-scraper.ts qpublic_cobb",
+    "db:qpublic:dekalb": "tsx database-scraper.ts qpublic_dekalb",
+    "db:qpublic:fulton": "tsx database-scraper.ts qpublic_fulton",
+    "db:qpublic:fayette": "tsx database-scraper.ts qpublic_fayette",
+    "db:qpublic:newton": "tsx database-scraper.ts qpublic_newton",
+    "db:qpublic:douglas": "tsx database-scraper.ts qpublic_douglas",
+    "db:qpublic:gwinnett": "tsx database-scraper.ts qpublic_gwinnett",
+    "scrape:probates": "run-p db:probate:*",
+    "scrape:properties": "run-p db:qpublic:*",
+    "scrape:all": "run-p db:probate:* db:qpublic:*",
     "install-deps": "npm install playwright tsx dotenv node-fetch @types/node @prisma/client"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "dayjs": "^1.11.18",
     "dotenv": "^16.6.1",
     "node-fetch": "^2.7.0",
     "playwright": "^1.54.2",
@@ -32,7 +42,8 @@
   },
   "devDependencies": {
     "@types/node": "^20.19.10",
-    "@types/node-fetch": "^2.6.7"
+    "@types/node-fetch": "^2.6.7",
+    "npm-run-all": "^4.1.5"
   },
   "bin": {
     "scrape": "./scrape-runner.ts"

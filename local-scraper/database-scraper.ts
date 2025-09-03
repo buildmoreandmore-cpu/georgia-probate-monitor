@@ -4,6 +4,7 @@
 const { PrismaClient } = require('../node_modules/@prisma/client')
 import { HybridPlaywrightScraper, ScrapedCase } from './playwright-hybrid-scraper'
 import { config } from 'dotenv'
+import dayjs from 'dayjs'
 
 // Load environment variables
 config() // Load from local-scraper/.env
@@ -11,6 +12,27 @@ config({ path: '../.env.local' }) // Load from parent directory
 config({ path: '../.env.production' }) // Production config
 
 const prisma = new PrismaClient()
+
+/**
+ * Helper function to determine if a case should be saved based on filing date
+ * Rules:
+ * - Always save if filed today (regardless of died date)
+ * - If not filed today, only save if filed year is 2025
+ */
+function shouldSaveCase(filedDate?: Date, diedDate?: Date): boolean {
+  if (!filedDate) return false
+  
+  const today = dayjs()
+  const filed = dayjs(filedDate)
+  
+  // Always save if filed today
+  if (filed.isSame(today, 'day')) {
+    return true
+  }
+  
+  // If not filed today, only save if filed year is 2025
+  return filed.year() === 2025
+}
 
 class DatabaseScraper extends HybridPlaywrightScraper {
   constructor() {
@@ -28,6 +50,12 @@ class DatabaseScraper extends HybridPlaywrightScraper {
 
     try {
       for (const scrapedCase of cases) {
+        // Check if we should save this case based on filing date
+        if (!shouldSaveCase(scrapedCase.filingDate, scrapedCase.diedDate)) {
+          console.log(`⏭️  Case ${scrapedCase.caseId} doesn't match date criteria, skipping...`)
+          continue
+        }
+        
         // Check if case already exists
         const existingCase = await prisma.case.findUnique({
           where: { caseId: scrapedCase.caseId }

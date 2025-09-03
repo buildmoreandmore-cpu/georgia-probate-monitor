@@ -50,7 +50,7 @@ export default function Dashboard() {
           onClick={() => window.location.href = '/api/scrape-test'}
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
         >
-          Run Scraper Test
+          Run Scraper
         </button>
       </div>
 
@@ -62,7 +62,7 @@ export default function Dashboard() {
             <h3 className="text-lg font-semibold text-gray-900">Scraper Status</h3>
           </div>
           <p className="text-gray-600">
-            Local scraper is operational. Click &ldquo;Run Scraper Test&rdquo; to test functionality.
+            Local scraper is operational. Click &ldquo;Run Scraper&rdquo; to start scraping all probate and property sites.
           </p>
         </div>
       </div>
@@ -98,7 +98,7 @@ export default function Dashboard() {
           The Georgia Probate Records scraper is operational and ready to search for new filings.
         </p>
         <p className="text-green-700 text-sm">
-          Use the scraper test button above to run a search, or use the local scraper tool directly.
+          Use the scraper button above to run a complete scrape, or use the local scraper tool directly with 'npm run scrape:all'.
         </p>
       </div>
     </div>
