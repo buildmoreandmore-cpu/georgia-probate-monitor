@@ -17,9 +17,14 @@
     "scrape:qpublic:all": "tsx scrape-runner.ts qpublic_all",
     "scrape:probate": "tsx scrape-runner.ts georgia_probate_records cobb_probate",
     "scrape:all": "tsx scrape-runner.ts georgia_probate_records cobb_probate qpublic_all",
-    "install-deps": "npm install playwright tsx dotenv node-fetch @types/node"
+    "scrape:database": "tsx database-scraper.ts",
+    "scrape:database:georgia": "tsx database-scraper.ts georgia_probate_records",
+    "scrape:database:cobb": "tsx database-scraper.ts cobb_probate",
+    "scrape:database:all": "tsx database-scraper.ts georgia_probate_records cobb_probate qpublic_all",
+    "install-deps": "npm install playwright tsx dotenv node-fetch @types/node @prisma/client"
   },
   "dependencies": {
+    "@prisma/client": "^5.22.0",
     "dotenv": "^16.6.1",
     "node-fetch": "^2.7.0",
     "playwright": "^1.54.2",
