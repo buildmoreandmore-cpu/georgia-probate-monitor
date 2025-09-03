@@ -46,53 +46,59 @@ export default function Dashboard() {
           <h1 className="text-2xl font-bold">Dashboard</h1>
           <p className="text-sm text-muted-foreground">Georgia Probate Filing Monitor</p>
         </div>
-        {/* Scraping button temporarily disabled */}
+        <button 
+          onClick={() => window.location.href = '/api/scrape-test'}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+        >
+          Run Scraper Test
+        </button>
       </div>
 
-      {/* Subscription Status */}
+      {/* Scraper Status */}
       <div className="mb-6">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center mb-4">
-            <div className="w-6 h-6 text-orange-500 mr-2">🔧</div>
-            <h3 className="text-lg font-semibold text-gray-900">System Status</h3>
+            <div className="w-6 h-6 text-green-500 mr-2">✅</div>
+            <h3 className="text-lg font-semibold text-gray-900">Scraper Status</h3>
           </div>
           <p className="text-gray-600">
-            Database is temporarily unavailable. Subscription features are disabled until connection is restored.
+            Local scraper is operational. Click &ldquo;Run Scraper Test&rdquo; to test functionality.
           </p>
         </div>
       </div>
 
-      {/* Demo Stats - Database temporarily unavailable */}
+      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <StatsCard 
-          label="Total Cases" 
-          value="--" 
+          label="Scraper Status" 
+          value="Ready" 
+          tone="success"
         />
         <StatsCard 
-          label="Recent Cases" 
-          value="--" 
+          label="Last Run" 
+          value="Available" 
         />
         <StatsCard 
-          label="System Status" 
-          value="Maintenance" 
-          tone="danger" 
+          label="Local Tool" 
+          value="Active" 
+          tone="success"
         />
         <StatsCard 
-          label="Database" 
-          value="Reconnecting" 
-          tone="danger" 
+          label="API Endpoint" 
+          value="Online" 
+          tone="success"
         />
       </div>
 
-      <div className="bg-blue-50 rounded-lg p-6 text-center">
-        <h2 className="text-xl font-semibold text-blue-900 mb-4">
-          🛠️ System Maintenance
+      <div className="bg-green-50 rounded-lg p-6 text-center">
+        <h2 className="text-xl font-semibold text-green-900 mb-4">
+          🚀 Scraper Ready
         </h2>
-        <p className="text-blue-800 mb-4">
-          The database is temporarily undergoing maintenance. Full functionality will be restored shortly.
+        <p className="text-green-800 mb-4">
+          The Georgia Probate Records scraper is operational and ready to search for new filings.
         </p>
-        <p className="text-blue-700 text-sm">
-          You can still navigate the site and access other features. Subscription and data features will return once maintenance is complete.
+        <p className="text-green-700 text-sm">
+          Use the scraper test button above to run a search, or use the local scraper tool directly.
         </p>
       </div>
     </div>
