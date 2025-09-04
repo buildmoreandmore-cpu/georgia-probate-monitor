@@ -8,7 +8,6 @@ interface ScrapedCase {
   county: string
   filingDate: Date
   decedentName: string
-  caseType: string
   status: string
   court: string
 }
@@ -39,7 +38,6 @@ async function scrapeGeorgiaProbateRecords(): Promise<ScrapedCase[]> {
         county: 'Henry',
         filingDate: new Date(),
         decedentName: 'John Smith',
-        caseType: 'Probate',
         status: 'Active',
         court: 'Henry County Probate Court'
       },
@@ -48,7 +46,6 @@ async function scrapeGeorgiaProbateRecords(): Promise<ScrapedCase[]> {
         county: 'Clayton',
         filingDate: new Date(),
         decedentName: 'Mary Johnson',
-        caseType: 'Administration',
         status: 'Active',
         court: 'Clayton County Probate Court'
       }
@@ -74,7 +71,6 @@ async function scrapeQPublicSite(county: string): Promise<ScrapedCase[]> {
         county: county,
         filingDate: new Date(),
         decedentName: `Property Owner ${county}`,
-        caseType: 'Property Record',
         status: 'Current',
         court: `${county} County Records`
       }
@@ -109,7 +105,6 @@ export async function POST(request: Request) {
           county: 'Cobb',
           filingDate: new Date(),
           decedentName: 'Cobb County Case',
-          caseType: 'Probate',
           status: 'Active',
           court: 'Cobb County Probate Court'
         }]
