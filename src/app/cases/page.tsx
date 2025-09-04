@@ -37,7 +37,7 @@ export default async function CasesPage() {
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
-              Today's Probate Filings
+              Today&apos;s Probate Filings
             </h1>
             <p className="text-muted-foreground">
               Cases filed on {today.format('MMMM D, YYYY')} ({todaysCases.length} found)
@@ -85,7 +85,7 @@ export default async function CasesPage() {
     )
 
   } catch (error) {
-    console.error('Failed to fetch today\'s cases:', error)
+    console.error('Failed to fetch today&apos;s cases:', error)
     
     // Fallback to show sample today's cases when database fails
     const sampleTodaysCases = [
@@ -103,7 +103,7 @@ export default async function CasesPage() {
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
-              Today's Probate Filings
+              Today&apos;s Probate Filings
             </h1>
             <p className="text-muted-foreground">
               Cases filed on {today.format('MMMM D, YYYY')} ({sampleTodaysCases.length} found)
