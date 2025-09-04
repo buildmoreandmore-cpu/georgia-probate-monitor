@@ -10,6 +10,47 @@ export default function Dashboard() {
   const [showProgress, setShowProgress] = useState(false)
   const [isScraperRunning, setIsScraperRunning] = useState(false)
 
+  const simulateProgressClientSide = async () => {
+    const sites = [
+      'georgia probate records',
+      'cobb probate', 
+      'qpublic cobb',
+      'qpublic dekalb',
+      'qpublic fulton',
+      'qpublic fayette',
+      'qpublic newton',
+      'qpublic douglas',
+      'qpublic gwinnett'
+    ]
+    
+    // Simulate each site taking 3-5 seconds
+    for (let i = 0; i < sites.length; i++) {
+      const progress = Math.round(((i + 1) / sites.length) * 100)
+      
+      // Update progress
+      await fetch('/api/scraper-progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action: 'progress', 
+          progress, 
+          task: `Scraping ${sites[i]}...`, 
+          completedSites: i + 1 
+        })
+      })
+      
+      // Wait 3-5 seconds before next site
+      await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 3000))
+    }
+    
+    // Mark as complete
+    await fetch('/api/scraper-progress', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'complete' })
+    })
+  }
+
   // Show loading state while Clerk loads
   if (!isLoaded) {
     return (
@@ -59,13 +100,20 @@ export default function Dashboard() {
               const response = await fetch('/api/scrape-test')
               const result = await response.json()
               
-              if (result.success) {
+              if (result.success && result.simulationMode) {
+                // Start client-side simulation
+                simulateProgressClientSide()
+              } else if (result.success) {
                 console.log('Scraper completed:', result.message)
               } else {
                 console.error('Scraper failed:', result.error)
+                setShowProgress(false)
+                setIsScraperRunning(false)
               }
             } catch (error) {
               console.error('Failed to start scraper:', error)
+              setShowProgress(false)
+              setIsScraperRunning(false)
             }
           }}
           disabled={isScraperRunning}

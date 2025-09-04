@@ -69,15 +69,13 @@ export async function GET(): Promise<Response> {
     // Report scraper start
     await updateProgress('start')
     
-    // Simulate scraping progress for demo/testing
-    simulateScrapingProgress()
-    
-    // Return immediately while simulated scraper runs
+    // Return immediately - the progress will be simulated client-side
     return NextResponse.json({
       success: true,
       message: 'Scraper started successfully!',
       note: 'Progress bar will show simulated scraping progress',
-      status: 'running'
+      status: 'running',
+      simulationMode: true // Tell frontend to handle simulation
     })
     
   } catch (error) {
