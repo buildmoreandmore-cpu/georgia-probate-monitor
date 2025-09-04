@@ -49,8 +49,19 @@ export const SettingsSchema = z.object({
   cron_schedule: z.string()
 })
 
+export const SearchParamsSchema = z.object({
+  county: z.string().optional(),
+  status: z.string().optional(),
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
+  estateValueMin: z.string().optional(),
+  estateValueMax: z.string().optional(),
+  page: z.string().optional()
+})
+
 export type CaseOutput = z.infer<typeof CaseOutputSchema>
 export type Contact = z.infer<typeof ContactSchema>
 export type Parcel = z.infer<typeof ParcelSchema>
 export type ScrapingJob = z.infer<typeof ScrapingJobSchema>
 export type Settings = z.infer<typeof SettingsSchema>
+export type SearchParams = z.infer<typeof SearchParamsSchema>
