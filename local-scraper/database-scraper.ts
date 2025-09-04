@@ -77,7 +77,6 @@ class DatabaseScraper extends HybridPlaywrightScraper {
             estateValue: scrapedCase.estateValue ? parseFloat(scrapedCase.estateValue.toString()) : null,
             caseNumber: scrapedCase.caseNumber,
             attorney: scrapedCase.executor || scrapedCase.administrator || scrapedCase.petitioner,
-            courtUrl: scrapedCase.courtUrl,
             status: 'active'
           }
         })

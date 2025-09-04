@@ -27,7 +27,6 @@ const BulkCaseSchema = z.object({
   decedentName: z.string(),
   caseNumber: z.string().optional(),
   attorney: z.string().optional(),
-  courtUrl: z.string().optional(),
   contacts: z.array(ContactSchema).optional(),
   properties: z.array(PropertySchema).optional()
 })
@@ -81,7 +80,6 @@ export async function POST(request: NextRequest) {
             decedentName: caseData.decedentName,
             caseNumber: caseData.caseNumber,
             attorney: caseData.attorney,
-            courtUrl: caseData.courtUrl
           }
         })
 
@@ -185,7 +183,6 @@ export async function GET() {
         decedentName: 'string',
         caseNumber: 'string (optional)',
         attorney: 'string (optional)',
-        courtUrl: 'string (optional)',
         contacts: [{
           type: 'executor|administrator|petitioner',
           name: 'string',

@@ -12,7 +12,6 @@ export interface ScrapedCase {
   executor?: string
   administrator?: string
   caseNumber: string
-  courtUrl?: string
   rawHtmlPath?: string
   rawPdfPath?: string
   properties: ScrapedProperty[]
@@ -482,7 +481,7 @@ export class HybridPlaywrightScraper {
       console.warn('⚠️  Failed to save PDF:', pdfError)
     }
 
-    details.courtUrl = page.url()
+    // courtUrl removed
     details.properties = await this.extractProperties(page)
 
     return details
@@ -654,7 +653,6 @@ export class HybridPlaywrightScraper {
                 filingDate: dateFrom || new Date(),
                 decedentName: decedentName.trim(),
                 caseNumber: caseNumber.trim(),
-                courtUrl: page.url(),
                 properties: []
               })
             }
@@ -771,8 +769,7 @@ export class HybridPlaywrightScraper {
                       filingDate: dateFrom || new Date(),
                       decedentName: ownerName.trim(),
                       caseNumber: `QPUB-${county.toUpperCase()}-${j}`,
-                      courtUrl: page.url(),
-                      properties: [{
+                            properties: [{
                         parcelId: `${county}-${j}`,
                         situsAddress: address.trim(),
                         currentOwner: ownerName.trim(),
@@ -861,7 +858,6 @@ export class HybridPlaywrightScraper {
             decedentName: c.decedentName,
             caseNumber: c.caseNumber,
             attorney: c.executor || c.administrator,
-            courtUrl: c.courtUrl,
             contacts: [
               c.petitioner && { type: 'petitioner', name: c.petitioner },
               c.executor && { type: 'executor', name: c.executor },
