@@ -125,82 +125,16 @@ export const listCases = cache(async (params: ListCasesParams = {}) => {
       }
     }
   } catch (error) {
-    console.warn('Database unavailable, returning mock data:', error)
+    console.error('Database connection failed:', error)
     
-    // Return mock data when database is unavailable
-    const mockCases: CaseData[] = [
-      {
-        id: 'mock-1',
-        caseId: 'henry-2025-001',
-        county: 'Henry',
-        filingDate: '2025-09-01T00:00:00.000Z',
-        caseNumber: 'HE-2025-001',
-        decedentName: 'John Smith',
-        decedentAddress: '123 Main St, McDonough, GA 30253',
-        estateValue: 250000,
-        status: 'active',
-        contacts: [{
-          id: 'contact-1',
-          type: 'executor',
-          name: 'Jane Smith'
-        }],
-        parcels: [{
-          id: 'parcel-1',
-          situsAddress: '123 Main St, McDonough, GA 30253',
-          assessedValue: 200000
-        }]
-      },
-      {
-        id: 'mock-2', 
-        caseId: 'clayton-2025-001',
-        county: 'Clayton',
-        filingDate: '2025-09-02T00:00:00.000Z',
-        caseNumber: 'CL-2025-001',
-        decedentName: 'Mary Johnson',
-        decedentAddress: '456 Oak Ave, Jonesboro, GA 30236',
-        estateValue: 150000,
-        status: 'active',
-        contacts: [{
-          id: 'contact-2',
-          type: 'administrator',
-          name: 'Robert Johnson'
-        }],
-        parcels: [{
-          id: 'parcel-2',
-          situsAddress: '456 Oak Ave, Jonesboro, GA 30236',
-          assessedValue: 120000
-        }]
-      },
-      {
-        id: 'mock-3',
-        caseId: 'douglas-2025-001', 
-        county: 'Douglas',
-        filingDate: '2025-09-03T00:00:00.000Z',
-        caseNumber: 'DO-2025-001',
-        decedentName: 'Robert Brown',
-        decedentAddress: '789 Pine Dr, Douglasville, GA 30134',
-        estateValue: 300000,
-        status: 'active',
-        contacts: [{
-          id: 'contact-3',
-          type: 'executor',
-          name: 'Sarah Brown'
-        }],
-        parcels: [{
-          id: 'parcel-3',
-          situsAddress: '789 Pine Dr, Douglasville, GA 30134',
-          assessedValue: 240000
-        }]
-      }
-    ].filter(case_ => !county || case_.county.toLowerCase() === county.toLowerCase())
-
+    // Return empty data when database is unavailable - no mock data
     return {
-      data: mockCases,
+      data: [],
       pagination: {
         page,
         limit,
-        total: mockCases.length,
-        totalPages: Math.ceil(mockCases.length / limit)
+        total: 0,
+        totalPages: 0
       }
     }
   }
