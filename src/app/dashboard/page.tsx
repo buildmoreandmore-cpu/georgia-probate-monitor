@@ -2,9 +2,13 @@
 
 import { useUser } from '@clerk/nextjs'
 import { StatsCard } from '@/components/StatsCard'
+import ScraperProgressBar from '@/components/ScraperProgressBar'
+import { useState } from 'react'
 
 export default function Dashboard() {
   const { isLoaded, isSignedIn } = useUser()
+  const [showProgress, setShowProgress] = useState(false)
+  const [isScraperRunning, setIsScraperRunning] = useState(false)
 
   // Show loading state while Clerk loads
   if (!isLoaded) {
@@ -47,10 +51,27 @@ export default function Dashboard() {
           <p className="text-sm text-muted-foreground">Georgia Probate Filing Monitor</p>
         </div>
         <button 
-          onClick={() => window.location.href = '/api/scrape-test'}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          onClick={async () => {
+            setShowProgress(true)
+            setIsScraperRunning(true)
+            
+            try {
+              const response = await fetch('/api/scrape-test')
+              const result = await response.json()
+              
+              if (result.success) {
+                console.log('Scraper completed:', result.message)
+              } else {
+                console.error('Scraper failed:', result.error)
+              }
+            } catch (error) {
+              console.error('Failed to start scraper:', error)
+            }
+          }}
+          disabled={isScraperRunning}
+          className={`px-4 py-2 ${isScraperRunning ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} text-white rounded-md`}
         >
-          Run Scraper
+          {isScraperRunning ? 'Scraping...' : 'Run Scraper'}
         </button>
       </div>
 
@@ -101,6 +122,19 @@ export default function Dashboard() {
           Use the scraper button above to run a complete scrape of all probate and property sites, or use the local scraper tool directly with &lsquo;npm run scrape:all&rsquo;.
         </p>
       </div>
+
+      {/* Progress Bar Modal */}
+      <ScraperProgressBar 
+        isVisible={showProgress}
+        onComplete={() => {
+          setShowProgress(false)
+          setIsScraperRunning(false)
+          // Optionally refresh the page to show new cases
+          setTimeout(() => {
+            window.location.href = '/cases'
+          }, 1000)
+        }}
+      />
     </div>
   )
 }
