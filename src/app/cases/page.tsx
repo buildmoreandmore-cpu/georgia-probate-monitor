@@ -55,7 +55,7 @@ export default async function CasesPage() {
             <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
               <div className="p-6">
                 <div className="space-y-4">
-                  {todaysCases.map((case_) => (
+                  {todaysCases.map((case_: any) => (
                     <div 
                       key={case_.id}
                       className="border-b last:border-b-0 pb-4 last:pb-0"
@@ -114,7 +114,7 @@ export default async function CasesPage() {
           <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
             <div className="p-6">
               <div className="space-y-4">
-                {sampleTodaysCases.map((case_) => (
+                {sampleTodaysCases.map((case_: any) => (
                   <div 
                     key={case_.id}
                     className="border-b last:border-b-0 pb-4 last:pb-0"
