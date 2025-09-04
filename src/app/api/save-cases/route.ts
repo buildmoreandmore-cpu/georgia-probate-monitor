@@ -9,7 +9,6 @@ interface ScrapedCase {
   caseId: string
   county: string
   filingDate: Date
-  diedDate?: Date
   decedentName: string
   caseType: string
   status: string
@@ -50,7 +49,6 @@ export async function POST(request: Request) {
             caseId: caseData.caseId,
             county: caseData.county,
             filingDate: caseData.filingDate,
-            diedDate: caseData.diedDate,
             decedentName: caseData.decedentName,
             caseType: caseData.caseType,
             status: caseData.status,

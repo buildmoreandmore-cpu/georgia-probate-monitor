@@ -7,7 +7,6 @@ interface ScrapedCase {
   caseId: string
   county: string
   filingDate: Date
-  diedDate?: Date
   decedentName: string
   caseType: string
   status: string
@@ -39,7 +38,6 @@ async function scrapeGeorgiaProbateRecords(): Promise<ScrapedCase[]> {
         caseId: `GP-${Date.now()}-001`,
         county: 'Henry',
         filingDate: new Date(),
-        diedDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
         decedentName: 'John Smith',
         caseType: 'Probate',
         status: 'Active',
@@ -49,7 +47,6 @@ async function scrapeGeorgiaProbateRecords(): Promise<ScrapedCase[]> {
         caseId: `GP-${Date.now()}-002`,
         county: 'Clayton',
         filingDate: new Date(),
-        diedDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000), // 15 days ago
         decedentName: 'Mary Johnson',
         caseType: 'Administration',
         status: 'Active',

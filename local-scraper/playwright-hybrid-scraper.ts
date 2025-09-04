@@ -7,7 +7,6 @@ export interface ScrapedCase {
   caseId: string
   county: string
   filingDate: Date
-  diedDate?: Date
   decedentName: string
   petitioner?: string
   executor?: string
