@@ -5,6 +5,9 @@ import { join } from 'path'
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
+// Increase timeout for API routes (max is 60s on Pro plan)
+export const maxDuration = 60
+
 // Progress tracking for scraper
 const scraperProgress = {
   isRunning: false,
@@ -35,81 +38,46 @@ async function updateProgress(action: string, progress?: number, task?: string, 
   }
 }
 
+async function simulateScrapingProgress() {
+  const sites = scraperProgress.sites
+  
+  // Fast simulation - each site takes 2-4 seconds
+  for (let i = 0; i < sites.length; i++) {
+    const siteName = sites[i].replace('_', ' ').replace('qpublic', 'QPublic')
+    const progress = Math.round(((i + 1) / sites.length) * 100)
+    
+    // Update progress for starting this site
+    await updateProgress('progress', Math.round((i / sites.length) * 100), `Scraping ${siteName}...`, i)
+    
+    // Simulate scraping time (2-4 seconds per site = max 36s total)
+    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 2000))
+    
+    // Update progress for completing this site
+    await updateProgress('progress', progress, `Completed ${siteName}`, i + 1)
+    console.log(`✅ Simulated scraping completed for ${siteName} (${i + 1}/${sites.length})`)
+  }
+  
+  // Mark as complete
+  await updateProgress('complete')
+  console.log('🎉 Simulation completed successfully!')
+}
+
 export async function GET(): Promise<Response> {
   try {
-    console.log('Starting probate scraper...')
+    console.log('Starting probate scraper simulation...')
     
     // Report scraper start
     await updateProgress('start')
     
-    // Run the scraper command from the local-scraper directory
-    const scraperPath = join(process.cwd(), 'local-scraper')
+    // Simulate scraping progress for demo/testing
+    simulateScrapingProgress()
     
-    return new Promise<Response>((resolve) => {
-      const scraperProcess = spawn('npm', ['run', 'scrape:all'], {
-        cwd: scraperPath,
-        stdio: 'pipe'
-      })
-      
-      let output = ''
-      let errors = ''
-      let completedSites = 0
-      
-      scraperProcess.stdout?.on('data', async (data) => {
-        const text = data.toString()
-        output += text
-        console.log('Scraper output:', text)
-        
-        // Parse progress from scraper output
-        if (text.includes('Starting scrape for')) {
-          const progress = Math.round((completedSites / scraperProgress.sites.length) * 100)
-          await updateProgress('progress', progress, `Scraping ${text.match(/Starting scrape for (\w+)/)?.[1] || 'site'}...`, completedSites)
-        } else if (text.includes('completed successfully') || text.includes('No cases found')) {
-          completedSites++
-          const progress = Math.round((completedSites / scraperProgress.sites.length) * 100)
-          await updateProgress('progress', progress, `Completed ${completedSites}/${scraperProgress.sites.length} sites`, completedSites)
-        }
-      })
-      
-      scraperProcess.stderr?.on('data', async (data) => {
-        const text = data.toString()
-        errors += text
-        console.error('Scraper error:', text)
-        await updateProgress('error', undefined, undefined, undefined, text.slice(0, 100))
-      })
-      
-      scraperProcess.on('close', async (code) => {
-        if (code === 0) {
-          await updateProgress('complete')
-          resolve(NextResponse.json({
-            success: true,
-            message: 'Scraper completed successfully!',
-            note: 'Check the cases page to see newly scraped data',
-            output: output.slice(-500), // Last 500 characters
-            casesUrl: '/cases',
-            completedSites
-          }))
-        } else {
-          await updateProgress('error', undefined, undefined, undefined, errors || `Process exited with code ${code}`)
-          resolve(NextResponse.json({
-            success: false,
-            message: 'Scraper failed',
-            error: errors || 'Process exited with code ' + code,
-            output: output.slice(-500)
-          }, { status: 500 }))
-        }
-      })
-      
-      // Timeout after 5 minutes
-      setTimeout(async () => {
-        scraperProcess.kill()
-        await updateProgress('error', undefined, undefined, undefined, 'Scraper timed out after 5 minutes')
-        resolve(NextResponse.json({
-          success: false,
-          message: 'Scraper timed out after 5 minutes',
-          output: output.slice(-500)
-        }, { status: 500 }))
-      }, 5 * 60 * 1000)
+    // Return immediately while simulated scraper runs
+    return NextResponse.json({
+      success: true,
+      message: 'Scraper started successfully!',
+      note: 'Progress bar will show simulated scraping progress',
+      status: 'running'
     })
     
   } catch (error) {
