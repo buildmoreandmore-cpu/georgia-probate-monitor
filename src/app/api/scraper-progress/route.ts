@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 let scraperState = {
   isRunning: false,
   progress: 0,
-  currentTask: 'Idle',
+  currentTask: 'Ready',
   totalSites: 9,
   completedSites: 0,
   startTime: null as Date | null,
@@ -47,6 +47,16 @@ export async function POST(request: Request) {
     } else if (update.action === 'error') {
       scraperState.errors.push(update.error || 'Unknown error')
       scraperState.currentTask = `Error: ${update.error || 'Unknown error'}`
+    } else if (update.action === 'reset') {
+      scraperState = {
+        isRunning: false,
+        progress: 0,
+        currentTask: 'Ready',
+        totalSites: 9,
+        completedSites: 0,
+        startTime: null,
+        errors: []
+      }
     }
     
     return NextResponse.json({ success: true, state: scraperState })
