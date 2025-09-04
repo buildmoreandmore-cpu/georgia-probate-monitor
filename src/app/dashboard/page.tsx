@@ -51,6 +51,114 @@ export default function Dashboard() {
     })
   }
 
+  const runRealScraper = async () => {
+    const siteIds = [
+      'georgia_probate_records',
+      'cobb_probate', 
+      'qpublic_cobb',
+      'qpublic_dekalb',
+      'qpublic_fulton',
+      'qpublic_fayette',
+      'qpublic_newton',
+      'qpublic_douglas',
+      'qpublic_gwinnett'
+    ]
+    
+    const siteNames = [
+      'Georgia Probate Records',
+      'Cobb Probate Court', 
+      'QPublic Cobb County',
+      'QPublic DeKalb County',
+      'QPublic Fulton County',
+      'QPublic Fayette County',
+      'QPublic Newton County',
+      'QPublic Douglas County',
+      'QPublic Gwinnett County'
+    ]
+    
+    let totalCases = 0
+    
+    // Scrape each site individually
+    for (let i = 0; i < siteIds.length; i++) {
+      const progress = Math.round((i / siteIds.length) * 100)
+      
+      // Update progress for starting this site
+      await fetch('/api/scraper-progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action: 'progress', 
+          progress, 
+          task: `Scraping ${siteNames[i]}...`, 
+          completedSites: i 
+        })
+      })
+      
+      try {
+        // Call the individual site scraper
+        const response = await fetch('/api/scrape-site', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ site: siteIds[i] })
+        })
+        
+        const result = await response.json()
+        
+        if (result.success) {
+          totalCases += result.casesFound || 0
+          console.log(`✅ ${siteNames[i]}: Found ${result.casesFound} cases`)
+          
+          // Save cases to database if any were found
+          if (result.cases && result.cases.length > 0) {
+            try {
+              const saveResponse = await fetch('/api/save-cases', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cases: result.cases })
+              })
+              
+              const saveResult = await saveResponse.json()
+              
+              if (saveResult.success) {
+                console.log(`💾 ${siteNames[i]}: Saved ${saveResult.savedCount} cases to database`)
+              } else {
+                console.error(`💾 ${siteNames[i]}: Failed to save cases: ${saveResult.error}`)
+              }
+            } catch (saveError) {
+              console.error(`💾 ${siteNames[i]}: Database save error`, saveError)
+            }
+          }
+        } else {
+          console.error(`❌ ${siteNames[i]}: ${result.error}`)
+        }
+      } catch (error) {
+        console.error(`❌ ${siteNames[i]}: Network error`, error)
+      }
+      
+      // Update progress for completing this site
+      const finalProgress = Math.round(((i + 1) / siteIds.length) * 100)
+      await fetch('/api/scraper-progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action: 'progress', 
+          progress: finalProgress, 
+          task: `Completed ${siteNames[i]} (${totalCases} total cases)`, 
+          completedSites: i + 1 
+        })
+      })
+    }
+    
+    // Mark as complete
+    await fetch('/api/scraper-progress', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'complete' })
+    })
+    
+    console.log(`🎉 Real scraping completed! Total cases found: ${totalCases}`)
+  }
+
   // Show loading state while Clerk loads
   if (!isLoaded) {
     return (
@@ -103,6 +211,9 @@ export default function Dashboard() {
               if (result.success && result.simulationMode) {
                 // Start client-side simulation
                 simulateProgressClientSide()
+              } else if (result.success && result.realScraping) {
+                // Start real scraping
+                runRealScraper()
               } else if (result.success) {
                 console.log('Scraper completed:', result.message)
               } else {
