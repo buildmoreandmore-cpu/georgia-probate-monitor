@@ -98,7 +98,7 @@ export default function Dashboard() {
           The Georgia Probate Records scraper is operational and ready to search for new filings.
         </p>
         <p className="text-green-700 text-sm">
-          Use the scraper button above to run a complete scrape, or use the local scraper tool directly with 'npm run scrape:all'.
+          Use the scraper button above to run a complete scrape of all probate and property sites, or use the local scraper tool directly with 'npm run scrape:all'.
         </p>
       </div>
     </div>
