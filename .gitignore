@@ -48,3 +48,7 @@ Thumbs.db
 # Logs
 logs
 *.loglocal-scraper/node_modules/
+
+# Dependencies
+local-scraper/node_modules/
+local-scraper/.package-lock.json
