@@ -69,27 +69,16 @@ export async function GET(): Promise<Response> {
     // Report scraper start
     await updateProgress('start')
     
-    // Check if we should use simulation or real scraping
-    const useSimulation = process.env.USE_SIMULATION === 'true'
+    // Always use real scraping now (simulation was for testing)
+    console.log('🚀 Starting REAL scraper mode...')
     
-    if (useSimulation) {
-      return NextResponse.json({
-        success: true,
-        message: 'Scraper started successfully!',
-        note: 'Progress bar will show simulated scraping progress',
-        status: 'running',
-        simulationMode: true
-      })
-    } else {
-      // Start real scraping with client-side coordination
-      return NextResponse.json({
-        success: true,
-        message: 'Real scraper started successfully!',
-        note: 'Progress bar will show real scraping progress',
-        status: 'running',
-        realScraping: true
-      })
-    }
+    return NextResponse.json({
+      success: true,
+      message: 'Real scraper started successfully!',
+      note: 'Progress bar will show real scraping progress with live data',
+      status: 'running',
+      realScraping: true
+    })
     
   } catch (error) {
     console.error('Failed to start scraper:', error)
