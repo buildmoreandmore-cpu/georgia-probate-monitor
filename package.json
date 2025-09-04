@@ -27,6 +27,7 @@
     "clsx": "^2.1.1",
     "csv-parse": "^5.5.2",
     "date-fns": "^4.1.0",
+    "dayjs": "^1.11.18",
     "next": "14.2.31",
     "next-safe-action": "^8.0.8",
     "pdf-parse": "^1.1.1",
