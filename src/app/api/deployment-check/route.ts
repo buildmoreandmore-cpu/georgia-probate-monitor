@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   const deploymentInfo = {
     timestamp: new Date().toISOString(),
-    version: '3.0-latest',
+    version: '3.1-force-deploy',
     status: 'deployed',
     features: [
       'Real scraper API (not test)',
