@@ -35,10 +35,11 @@ function shouldSaveCase(filedDate?: Date, source?: string): boolean {
     console.log(`📅 QPublic date check: ${filed.format('MM/DD/YYYY')} (${isWithinRange ? 'WITHIN' : 'OUTSIDE'} 2-week range)`)
     return isWithinRange
   } else {
-    // Georgia Probate Records - only today's filings
-    const isSameDay = filed.isSame(today, 'day')
-    console.log(`📅 Probate date check: ${filed.format('MM/DD/YYYY')} (${isSameDay ? 'TODAY' : 'NOT TODAY'})`)
-    return isSameDay
+    // Georgia Probate Records - allow past 3 days to account for weekends/holidays
+    const threeDaysAgo = today.subtract(3, 'days')
+    const isWithinRange = filed.isAfter(threeDaysAgo) && filed.isBefore(today.add(1, 'day'))
+    console.log(`📅 Probate date check: ${filed.format('MM/DD/YYYY')} (${isWithinRange ? 'WITHIN 3 DAYS' : 'OUTSIDE RANGE'})`)
+    return isWithinRange
   }
 }
 
