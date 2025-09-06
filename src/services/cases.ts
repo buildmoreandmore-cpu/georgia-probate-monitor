@@ -77,10 +77,15 @@ export const listCases = cache(async (params: ListCasesParams = {}) => {
       if (dateTo) where.filingDate.lte = new Date(dateTo)
     }
 
-    if (estateValueMin !== undefined || estateValueMax !== undefined) {
+    if (estateValueMin !== null && estateValueMin !== undefined || 
+        estateValueMax !== null && estateValueMax !== undefined) {
       where.estateValue = {}
-      if (estateValueMin !== undefined) where.estateValue.gte = estateValueMin
-      if (estateValueMax !== undefined) where.estateValue.lte = estateValueMax
+      if (estateValueMin !== null && estateValueMin !== undefined) {
+        where.estateValue.gte = estateValueMin
+      }
+      if (estateValueMax !== null && estateValueMax !== undefined) {
+        where.estateValue.lte = estateValueMax
+      }
     }
 
     const [cases, total] = await Promise.all([

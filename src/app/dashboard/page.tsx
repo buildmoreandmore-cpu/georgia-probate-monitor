@@ -205,17 +205,30 @@ export default function Dashboard() {
             setIsScraperRunning(true)
             
             try {
-              const response = await fetch('/api/scrape-test')
+              const response = await fetch('/api/scrape-playwright', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  sites: ['georgia_probate_records'],
+                  dateFrom: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() // Past 3 days
+                })
+              })
               const result = await response.json()
               
-              if (result.success && result.simulationMode) {
-                // Start client-side simulation
-                simulateProgressClientSide()
-              } else if (result.success && result.realScraping) {
-                // Start real scraping
-                runRealScraper()
-              } else if (result.success) {
-                console.log('Scraper completed:', result.message)
+              if (result.success) {
+                console.log('Scraper completed successfully:', result.message)
+                console.log('Cases saved:', result.saved)
+                
+                // Show success message and refresh data
+                setProgress(100)
+                setCurrentStep('Scraping completed successfully!')
+                
+                // Refresh the page after a delay to show updated data
+                setTimeout(() => {
+                  window.location.reload()
+                }, 2000)
               } else {
                 console.error('Scraper failed:', result.error)
                 setShowProgress(false)

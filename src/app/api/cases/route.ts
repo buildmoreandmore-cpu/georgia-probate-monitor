@@ -8,12 +8,20 @@ export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
 const GetCasesSchema = z.object({
-  county: z.string().optional(),
-  status: z.enum(['active', 'archived']).optional(),
-  dateFrom: z.string().optional(),
-  dateTo: z.string().optional(),
-  estateValueMin: z.coerce.number().min(0).optional(),
-  estateValueMax: z.coerce.number().min(0).optional(),
+  county: z.string().nullish(),
+  status: z.enum(['active', 'archived']).nullish(),
+  dateFrom: z.string().nullish(),
+  dateTo: z.string().nullish(),
+  estateValueMin: z.string().optional().transform((val) => {
+    if (!val || val === '') return undefined
+    const num = Number(val)
+    return isNaN(num) ? undefined : num
+  }),
+  estateValueMax: z.string().optional().transform((val) => {
+    if (!val || val === '') return undefined
+    const num = Number(val)
+    return isNaN(num) ? undefined : num
+  }),
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20)
 })
@@ -66,10 +74,15 @@ export async function GET(request: NextRequest) {
       if (params.dateFrom) where.filingDate.gte = new Date(params.dateFrom)
       if (params.dateTo) where.filingDate.lte = new Date(params.dateTo)
     }
-    if (params.estateValueMin !== undefined || params.estateValueMax !== undefined) {
+    if (params.estateValueMin !== null && params.estateValueMin !== undefined || 
+        params.estateValueMax !== null && params.estateValueMax !== undefined) {
       where.estateValue = {}
-      if (params.estateValueMin !== undefined) where.estateValue.gte = params.estateValueMin
-      if (params.estateValueMax !== undefined) where.estateValue.lte = params.estateValueMax
+      if (params.estateValueMin !== null && params.estateValueMin !== undefined) {
+        where.estateValue.gte = params.estateValueMin
+      }
+      if (params.estateValueMax !== null && params.estateValueMax !== undefined) {
+        where.estateValue.lte = params.estateValueMax
+      }
     }
 
     // Get total count
