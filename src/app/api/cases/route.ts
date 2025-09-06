@@ -12,16 +12,8 @@ const GetCasesSchema = z.object({
   status: z.enum(['active', 'archived']).nullish(),
   dateFrom: z.string().nullish(),
   dateTo: z.string().nullish(),
-  estateValueMin: z.string().nullish().transform((val) => {
-    if (!val || val === '' || val === 'null') return undefined
-    const num = parseFloat(val)
-    return isNaN(num) ? undefined : num
-  }),
-  estateValueMax: z.string().nullish().transform((val) => {
-    if (!val || val === '' || val === 'null') return undefined
-    const num = parseFloat(val)
-    return isNaN(num) ? undefined : num
-  }),
+  estateValueMin: z.string().nullish(),
+  estateValueMax: z.string().nullish(),
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20)
 })
@@ -74,14 +66,19 @@ export async function GET(request: NextRequest) {
       if (params.dateFrom) where.filingDate.gte = new Date(params.dateFrom)
       if (params.dateTo) where.filingDate.lte = new Date(params.dateTo)
     }
-    if (params.estateValueMin !== null && params.estateValueMin !== undefined || 
-        params.estateValueMax !== null && params.estateValueMax !== undefined) {
+    // Handle estate value filtering with proper number conversion
+    const minValue = params.estateValueMin && params.estateValueMin !== '' 
+      ? parseFloat(params.estateValueMin) : undefined
+    const maxValue = params.estateValueMax && params.estateValueMax !== '' 
+      ? parseFloat(params.estateValueMax) : undefined
+      
+    if (!isNaN(minValue as number) || !isNaN(maxValue as number)) {
       where.estateValue = {}
-      if (params.estateValueMin !== null && params.estateValueMin !== undefined) {
-        where.estateValue.gte = params.estateValueMin
+      if (!isNaN(minValue as number)) {
+        where.estateValue.gte = minValue
       }
-      if (params.estateValueMax !== null && params.estateValueMax !== undefined) {
-        where.estateValue.lte = params.estateValueMax
+      if (!isNaN(maxValue as number)) {
+        where.estateValue.lte = maxValue
       }
     }
 

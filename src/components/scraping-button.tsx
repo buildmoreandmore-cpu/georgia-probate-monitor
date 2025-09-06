@@ -19,7 +19,7 @@ export function ScrapingButton({ className }: ScrapingButtonProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sites: ['georgia_probate_records'],
-          dateFrom: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+          dateFrom: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString() // 2 weeks
         })
       })
       

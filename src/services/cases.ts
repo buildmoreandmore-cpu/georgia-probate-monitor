@@ -77,13 +77,12 @@ export const listCases = cache(async (params: ListCasesParams = {}) => {
       if (dateTo) where.filingDate.lte = new Date(dateTo)
     }
 
-    if (estateValueMin !== null && estateValueMin !== undefined || 
-        estateValueMax !== null && estateValueMax !== undefined) {
+    if (estateValueMin !== undefined || estateValueMax !== undefined) {
       where.estateValue = {}
-      if (estateValueMin !== null && estateValueMin !== undefined) {
+      if (estateValueMin !== undefined) {
         where.estateValue.gte = estateValueMin
       }
-      if (estateValueMax !== null && estateValueMax !== undefined) {
+      if (estateValueMax !== undefined) {
         where.estateValue.lte = estateValueMax
       }
     }
