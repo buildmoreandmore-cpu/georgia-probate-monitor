@@ -12,14 +12,14 @@ const GetCasesSchema = z.object({
   status: z.enum(['active', 'archived']).nullish(),
   dateFrom: z.string().nullish(),
   dateTo: z.string().nullish(),
-  estateValueMin: z.string().optional().transform((val) => {
-    if (!val || val === '') return undefined
-    const num = Number(val)
+  estateValueMin: z.string().nullish().transform((val) => {
+    if (!val || val === '' || val === 'null') return undefined
+    const num = parseFloat(val)
     return isNaN(num) ? undefined : num
   }),
-  estateValueMax: z.string().optional().transform((val) => {
-    if (!val || val === '') return undefined
-    const num = Number(val)
+  estateValueMax: z.string().nullish().transform((val) => {
+    if (!val || val === '' || val === 'null') return undefined
+    const num = parseFloat(val)
     return isNaN(num) ? undefined : num
   }),
   page: z.coerce.number().min(1).default(1),
