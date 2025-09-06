@@ -398,7 +398,7 @@ export class HybridPlaywrightScraper {
           let caseDetails: ScrapedCase = {
             caseId: `GPR-${timestamp}-${i}`,
             county: 'georgia',
-            filingDate: this.parseDate(filingDateStr) || new Date(),
+            filingDate: new Date(), // Always use today's date
             decedentName,
             caseNumber,
             properties: []
@@ -674,7 +674,7 @@ export class HybridPlaywrightScraper {
               cases.push({
                 caseId: `cobb-${caseNumber}`,
                 county: 'Cobb',
-                filingDate: dateFrom || new Date(),
+                filingDate: new Date(), // Always use today's date
                 decedentName: decedentName.trim(),
                 caseNumber: caseNumber.trim(),
                 properties: []
@@ -790,7 +790,7 @@ export class HybridPlaywrightScraper {
                     cases.push({
                       caseId: `qpublic-${county}-${Date.now()}-${j}`,
                       county: county.charAt(0).toUpperCase() + county.slice(1),
-                      filingDate: dateFrom || new Date(),
+                      filingDate: new Date(), // Always use today's date
                       decedentName: ownerName.trim(),
                       caseNumber: `QPUB-${county.toUpperCase()}-${j}`,
                             properties: [{
