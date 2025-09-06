@@ -14,24 +14,49 @@ config({ path: '../.env.production' }) // Production config
 const prisma = new PrismaClient()
 
 /**
- * Helper function to determine if a case should be saved based on filing date
+ * Helper function to determine if a case should be saved based on filing date and source
  * Rules:
- * - ONLY save if filing date matches exactly today's date
- * - Reject all cases that are not filed today
+ * - Georgia Probate Records: ONLY save if filing date matches exactly today's date
+ * - QPublic Sites: Save if filing date is within the past 2 weeks
  */
-function shouldSaveCase(filedDate?: Date): boolean {
+function shouldSaveCase(filedDate?: Date, source?: string): boolean {
   if (!filedDate) return false
   
   const today = dayjs()
   const filed = dayjs(filedDate)
   
-  // Only save if filed today - exact date match required
-  return filed.isSame(today, 'day')
+  // Determine source type
+  const isQPublicSource = source?.startsWith('qpublic') || false
+  
+  if (isQPublicSource) {
+    // QPublic property records - allow 2 week window
+    const twoWeeksAgo = today.subtract(14, 'days')
+    const isWithinRange = filed.isAfter(twoWeeksAgo) && filed.isBefore(today.add(1, 'day'))
+    console.log(`📅 QPublic date check: ${filed.format('MM/DD/YYYY')} (${isWithinRange ? 'WITHIN' : 'OUTSIDE'} 2-week range)`)
+    return isWithinRange
+  } else {
+    // Georgia Probate Records - only today's filings
+    const isSameDay = filed.isSame(today, 'day')
+    console.log(`📅 Probate date check: ${filed.format('MM/DD/YYYY')} (${isSameDay ? 'TODAY' : 'NOT TODAY'})`)
+    return isSameDay
+  }
 }
 
 class DatabaseScraper extends HybridPlaywrightScraper {
+  private currentSite?: string
+  
   constructor() {
     super() // No API URL needed
+  }
+  
+  // Override scrapeAndUpload to track current site
+  async scrapeAndUpload(sites: string[] = ['georgia_probate_records'], dateFrom?: Date): Promise<void> {
+    for (const site of sites) {
+      this.currentSite = site
+      console.log(`\n📋 Starting scrape for ${site}...`)
+      
+      await super.scrapeAndUpload([site], dateFrom)
+    }
   }
 
   // Override the uploadCasesToVercel method to save directly to database
@@ -44,89 +69,132 @@ class DatabaseScraper extends HybridPlaywrightScraper {
     console.log(`💾 Saving ${cases.length} cases directly to database...`)
 
     try {
-      for (const scrapedCase of cases) {
-        // Check if we should save this case based on filing date (only today's date)
-        if (!shouldSaveCase(scrapedCase.filingDate)) {
-          console.log(`⏭️  Case ${scrapedCase.caseId} not filed today, skipping...`)
-          continue
-        }
+      // Filter cases that should be saved and don't exist yet
+      const validCases = cases.filter(scrapedCase => 
+        shouldSaveCase(scrapedCase.filingDate, this.currentSite)
+      )
+      
+      if (validCases.length === 0) {
+        console.log('⏭️  No cases within valid date range, skipping...')
+        return
+      }
+
+      // Batch check for existing cases
+      const caseIds = validCases.map(c => c.caseId)
+      const existingCases = await prisma.case.findMany({
+        where: { caseId: { in: caseIds } },
+        select: { caseId: true }
+      })
+      const existingCaseIds = new Set(existingCases.map(c => c.caseId))
+
+      // Filter out existing cases
+      const newCases = validCases.filter(c => !existingCaseIds.has(c.caseId))
+      
+      if (newCases.length === 0) {
+        console.log('⏭️  All cases already exist, skipping...')
+        return
+      }
+
+      console.log(`💾 Processing ${newCases.length} new cases in bulk transaction...`)
+
+      // Use a single transaction for all operations
+      await prisma.$transaction(async (tx) => {
+        // Prepare bulk case data
+        const caseData = newCases.map(scrapedCase => ({
+          caseId: scrapedCase.caseId,
+          county: scrapedCase.county,
+          filingDate: scrapedCase.filingDate,
+          decedentName: scrapedCase.decedentName,
+          decedentAddress: scrapedCase.decedentAddress,
+          estateValue: scrapedCase.estateValue ? parseFloat(scrapedCase.estateValue.toString()) : null,
+          caseNumber: scrapedCase.caseNumber,
+          attorney: scrapedCase.executor || scrapedCase.administrator || scrapedCase.petitioner,
+          status: 'active'
+        }))
+
+        // Bulk create cases
+        const createdCases = await tx.case.createManyAndReturn({ data: caseData })
+        console.log(`✅ Created ${createdCases.length} cases in bulk`)
+
+        // Create lookup map for case IDs
+        const caseIdMap = new Map(createdCases.map(c => [c.caseId, c.id]))
+
+        // Prepare bulk contact data
+        const contactData: Array<{caseId: string, type: string, name: string}> = []
         
-        // Check if case already exists
-        const existingCase = await prisma.case.findUnique({
-          where: { caseId: scrapedCase.caseId }
-        })
+        for (const scrapedCase of newCases) {
+          const dbCaseId = caseIdMap.get(scrapedCase.caseId)
+          if (!dbCaseId) continue
 
-        if (existingCase) {
-          console.log(`⏭️  Case ${scrapedCase.caseId} already exists, skipping...`)
-          continue
-        }
-
-        // Create the case
-        const savedCase = await prisma.case.create({
-          data: {
-            caseId: scrapedCase.caseId,
-            county: scrapedCase.county,
-            filingDate: new Date(), // Always use today's date
-            decedentName: scrapedCase.decedentName,
-            decedentAddress: scrapedCase.decedentAddress,
-            estateValue: scrapedCase.estateValue ? parseFloat(scrapedCase.estateValue.toString()) : null,
-            caseNumber: scrapedCase.caseNumber,
-            attorney: scrapedCase.executor || scrapedCase.administrator || scrapedCase.petitioner,
-            status: 'active'
-          }
-        })
-
-        console.log(`✅ Saved case: ${savedCase.caseId} - ${scrapedCase.decedentName}`)
-
-        // Save contacts
-        if (scrapedCase.petitioner) {
-          await prisma.contact.create({
-            data: {
-              caseId: savedCase.id,
+          if (scrapedCase.petitioner) {
+            contactData.push({
+              caseId: dbCaseId,
               type: 'petitioner',
               name: scrapedCase.petitioner
-            }
-          })
-        }
+            })
+          }
 
-        if (scrapedCase.executor) {
-          await prisma.contact.create({
-            data: {
-              caseId: savedCase.id,
-              type: 'executor', 
+          if (scrapedCase.executor) {
+            contactData.push({
+              caseId: dbCaseId,
+              type: 'executor',
               name: scrapedCase.executor
-            }
-          })
-        }
+            })
+          }
 
-        if (scrapedCase.administrator) {
-          await prisma.contact.create({
-            data: {
-              caseId: savedCase.id,
+          if (scrapedCase.administrator) {
+            contactData.push({
+              caseId: dbCaseId,
               type: 'administrator',
               name: scrapedCase.administrator
-            }
-          })
+            })
+          }
         }
 
-        // Save properties
-        for (const property of scrapedCase.properties || []) {
-          await prisma.parcel.create({
-            data: {
-              caseId: savedCase.id,
+        // Bulk create contacts
+        if (contactData.length > 0) {
+          await tx.contact.createMany({ data: contactData })
+          console.log(`✅ Created ${contactData.length} contacts in bulk`)
+        }
+
+        // Prepare bulk parcel data
+        const parcelData: Array<{
+          caseId: string
+          parcelId: string
+          county: string
+          situsAddress?: string
+          taxMailingAddress?: string
+          currentOwner?: string
+          qpublicUrl?: string
+          matchConfidence: number
+        }> = []
+
+        for (const scrapedCase of newCases) {
+          const dbCaseId = caseIdMap.get(scrapedCase.caseId)
+          if (!dbCaseId) continue
+
+          for (const property of scrapedCase.properties || []) {
+            parcelData.push({
+              caseId: dbCaseId,
               parcelId: property.parcelId,
               county: scrapedCase.county,
               situsAddress: property.situsAddress,
               taxMailingAddress: property.taxMailingAddress,
               currentOwner: property.currentOwner,
               qpublicUrl: property.qpublicUrl,
-              matchConfidence: 0.8 // Default confidence for scraped data
-            }
-          })
+              matchConfidence: 0.8
+            })
+          }
         }
-      }
 
-      console.log(`🎉 Successfully saved ${cases.length} cases to database!`)
+        // Bulk create parcels
+        if (parcelData.length > 0) {
+          await tx.parcel.createMany({ data: parcelData })
+          console.log(`✅ Created ${parcelData.length} parcels in bulk`)
+        }
+      })
+
+      console.log(`🎉 Successfully saved ${newCases.length} cases to database using bulk operations!`)
 
     } catch (error) {
       console.error('❌ Error saving cases to database:', error)

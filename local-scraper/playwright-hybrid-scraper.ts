@@ -3,6 +3,234 @@ import { writeFileSync, mkdirSync } from 'fs'
 import { join } from 'path'
 import fetch from 'node-fetch'
 
+class BrowserPagePool {
+  private availablePages: Page[] = []
+  private maxPages = 3
+  private context: any
+
+  constructor(context: any) {
+    this.context = context
+  }
+
+  async getPage(): Promise<Page> {
+    if (this.availablePages.length > 0) {
+      const page = this.availablePages.pop()!
+      console.log(`🔄 Reusing page from pool (${this.availablePages.length} remaining)`)
+      return page
+    }
+    
+    console.log(`🆕 Creating new page (pool empty)`)
+    return await this.context.newPage()
+  }
+
+  async releasePage(page: Page): Promise<void> {
+    try {
+      if (this.availablePages.length < this.maxPages) {
+        // Clear page state but keep it open for reuse
+        await page.goto('about:blank', { waitUntil: 'load', timeout: 5000 })
+        await page.evaluate(() => window.location.href = 'about:blank')
+        this.availablePages.push(page)
+        console.log(`♻️  Page returned to pool (${this.availablePages.length} available)`)
+      } else {
+        // Pool is full, close the page
+        await page.close()
+        console.log(`❌ Page closed (pool at capacity)`)
+      }
+    } catch (error) {
+      console.warn(`⚠️  Error releasing page:`, error)
+      try {
+        await page.close()
+      } catch {}
+    }
+  }
+
+  async cleanup(): Promise<void> {
+    console.log(`🧹 Cleaning up browser page pool (${this.availablePages.length} pages)`)
+    await Promise.all(
+      this.availablePages.map(async (page) => {
+        try {
+          await page.close()
+        } catch (error) {
+          console.warn('⚠️  Error closing pooled page:', error)
+        }
+      })
+    )
+    this.availablePages = []
+  }
+}
+
+class AdaptiveRateLimiter {
+  private baseDelay = 5000 // Start with 5 seconds
+  private maxDelay = 30000 // Max 30 seconds
+  private minDelay = 2000 // Min 2 seconds
+  private successStreak = 0
+  private errorStreak = 0
+  private lastRequestTime = 0
+
+  async waitForNextRequest(lastRequestSuccessful: boolean = true): Promise<void> {
+    const now = Date.now()
+    const timeSinceLastRequest = now - this.lastRequestTime
+
+    if (lastRequestSuccessful) {
+      this.successStreak++
+      this.errorStreak = 0
+      
+      // Gradually reduce delay on consecutive successes (max 3 reductions)
+      if (this.successStreak > 3 && this.successStreak % 2 === 0) {
+        this.baseDelay = Math.max(this.minDelay, this.baseDelay * 0.9)
+      }
+    } else {
+      this.errorStreak++
+      this.successStreak = 0
+      
+      // Exponentially back off on errors
+      this.baseDelay = Math.min(this.maxDelay, this.baseDelay * 1.5)
+    }
+
+    // Add jitter (±20% random variation)
+    const jitter = (Math.random() - 0.5) * 0.4 * this.baseDelay
+    const actualDelay = Math.max(this.minDelay, this.baseDelay + jitter)
+    
+    // Calculate remaining wait time
+    const remainingWait = Math.max(0, actualDelay - timeSinceLastRequest)
+
+    if (remainingWait > 0) {
+      const statusEmoji = lastRequestSuccessful ? '✅' : '❌'
+      const streakInfo = lastRequestSuccessful 
+        ? `${this.successStreak} successes` 
+        : `${this.errorStreak} errors`
+      
+      console.log(`${statusEmoji} Adaptive delay: ${Math.round(remainingWait/1000)}s (${streakInfo}, base: ${Math.round(this.baseDelay/1000)}s)`)
+      await this.sleep(remainingWait)
+    }
+
+    this.lastRequestTime = Date.now()
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms))
+  }
+
+  getStatus(): { baseDelay: number; successStreak: number; errorStreak: number } {
+    return {
+      baseDelay: this.baseDelay,
+      successStreak: this.successStreak,
+      errorStreak: this.errorStreak
+    }
+  }
+}
+
+class DOMSelectorCache {
+  private cache = new Map<string, string>()
+  private cacheExpiry = 30 * 60 * 1000 // 30 minutes
+  private timestamps = new Map<string, number>()
+
+  private getCacheKey(url: string, label: string): string {
+    const domain = new URL(url).hostname
+    return `${domain}:${label}`
+  }
+
+  async findWorkingSelector(page: Page, label: string, selectors: string[]): Promise<string | null> {
+    const url = page.url()
+    const cacheKey = this.getCacheKey(url, label)
+    
+    // Check cache first
+    const cachedSelector = this.getCachedSelector(cacheKey)
+    if (cachedSelector) {
+      try {
+        const element = await page.locator(cachedSelector).first()
+        if (await element.isVisible({ timeout: 1000 })) {
+          console.log(`🎯 Using cached selector for ${label}: ${cachedSelector}`)
+          return cachedSelector
+        } else {
+          // Cache entry is stale, remove it
+          this.cache.delete(cacheKey)
+          this.timestamps.delete(cacheKey)
+        }
+      } catch {
+        // Cache entry is stale, remove it
+        this.cache.delete(cacheKey)
+        this.timestamps.delete(cacheKey)
+      }
+    }
+
+    // Try selectors in order
+    for (const selector of selectors) {
+      try {
+        const element = await page.locator(selector).first()
+        if (await element.isVisible({ timeout: 1000 })) {
+          // Cache the working selector
+          this.cache.set(cacheKey, selector)
+          this.timestamps.set(cacheKey, Date.now())
+          console.log(`✨ Found and cached selector for ${label}: ${selector}`)
+          return selector
+        }
+      } catch (error) {
+        // Continue to next selector
+      }
+    }
+
+    console.log(`⚠️  No working selector found for ${label}`)
+    return null
+  }
+
+  async extractFieldWithCache(page: Page, label: string, selectors: string[]): Promise<string | undefined> {
+    const workingSelector = await this.findWorkingSelector(page, label, selectors)
+    if (!workingSelector) return undefined
+
+    try {
+      const element = await page.locator(workingSelector).first()
+      const text = (await element.textContent())?.trim()
+      return text && text.length > 3 ? text : undefined
+    } catch (error) {
+      console.warn(`⚠️  Error extracting ${label} with cached selector:`, error)
+      // Remove stale cache entry
+      const url = page.url()
+      const cacheKey = this.getCacheKey(url, label)
+      this.cache.delete(cacheKey)
+      this.timestamps.delete(cacheKey)
+      return undefined
+    }
+  }
+
+  private getCachedSelector(cacheKey: string): string | null {
+    const cached = this.cache.get(cacheKey)
+    const timestamp = this.timestamps.get(cacheKey)
+    
+    if (cached && timestamp && (Date.now() - timestamp) < this.cacheExpiry) {
+      return cached
+    }
+    
+    // Remove expired entry
+    if (cached) {
+      this.cache.delete(cacheKey)
+      this.timestamps.delete(cacheKey)
+    }
+    
+    return null
+  }
+
+  cleanup(): void {
+    const now = Date.now()
+    const keysToDelete: string[] = []
+    
+    this.timestamps.forEach((timestamp, key) => {
+      if (now - timestamp > this.cacheExpiry) {
+        keysToDelete.push(key)
+      }
+    })
+    
+    keysToDelete.forEach(key => {
+      this.cache.delete(key)
+      this.timestamps.delete(key)
+    })
+    
+    if (keysToDelete.length > 0) {
+      console.log(`🧹 Cleaned up ${keysToDelete.length} expired selector cache entries`)
+    }
+  }
+}
+
 export interface ScrapedCase {
   caseId: string
   county: string
@@ -28,6 +256,9 @@ export interface ScrapedProperty {
 export class HybridPlaywrightScraper {
   private browser: Browser | null = null
   private context: any = null
+  private pagePool: BrowserPagePool | null = null
+  private rateLimiter: AdaptiveRateLimiter = new AdaptiveRateLimiter()
+  private domCache: DOMSelectorCache = new DOMSelectorCache()
   private storageDir = './scraped-data'
   private vercelApiUrl: string
 
@@ -53,6 +284,10 @@ export class HybridPlaywrightScraper {
     this.context = await this.browser.newContext({
       userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     })
+
+    // Initialize page pool
+    this.pagePool = new BrowserPagePool(this.context)
+    console.log('📱 Browser page pool initialized')
   }
 
   async scrapeAndUpload(sites: string[] = ['georgia_probate_records'], dateFrom?: Date): Promise<void> {
@@ -176,10 +411,10 @@ export class HybridPlaywrightScraper {
         console.log('ℹ️  No terms modal found, continuing...')
       }
 
-      // Search for 2025 filed dates only (ignore death dates)
+      // Search for TODAY'S filing date only - most restrictive search
       const searchDate = dateFrom || new Date()
-      const startDate = new Date('2025-01-01')  // Start from 2025
-      const endDate = dateFrom || new Date()    // End at search date or today
+      const startDate = searchDate  // Start from today
+      const endDate = searchDate    // End at today (same day search)
       
       const startDateStr = startDate.toLocaleDateString('en-US', { 
         month: '2-digit', 
@@ -192,7 +427,7 @@ export class HybridPlaywrightScraper {
         year: 'numeric' 
       })
 
-      console.log(`📅 Searching for filings/deaths from ${startDateStr} to ${endDateStr}...`)
+      console.log(`📅 Searching for filings ONLY from today: ${startDateStr} (restricting to same day for current cases)...`)
       
       // Try to select one of the target counties: Henry, Clayton, or Douglas
       const targetCounties = ['Henry', 'Clayton', 'Douglas']
@@ -308,9 +543,24 @@ export class HybridPlaywrightScraper {
             
             // Wait for the page to reload/update after search
             try {
-              await page.waitForLoadState('networkidle', { timeout: 15000 })
+              await page.waitForLoadState('networkidle', { timeout: 20000 })
             } catch (e) {
-              await page.waitForTimeout(8000) // Fallback wait
+              console.log('⏳ Network idle timeout, waiting for results...')
+              await page.waitForTimeout(12000) // Longer fallback wait
+            }
+            
+            // Wait specifically for the RadGrid to populate with results
+            try {
+              console.log('🔍 Waiting for estates grid to populate...')
+              await page.waitForSelector('#ctl00_cpMain_rgEstates table tbody tr, [id*="rgEstates"] tbody tr', { 
+                timeout: 15000,
+                state: 'visible' 
+              })
+              console.log('✅ Found results table rows!')
+            } catch (e) {
+              console.log('⏰ Grid population timeout, checking for any results...')
+              // Additional wait to ensure AJAX completes
+              await page.waitForTimeout(5000)
             }
             break
           }
@@ -360,15 +610,47 @@ export class HybridPlaywrightScraper {
       console.log(`💾 Saved search results HTML: ${htmlPath}`)
 
       // Check if RadGrid has results - look for the estates grid specifically
-      const estatesGrid = await page.locator('#ctl00_cpMain_rgEstates, [id*="rgEstates"]').first()
+      // Try multiple selectors to find the results table
+      const possibleGrids = [
+        '#ctl00_cpMain_rgEstates',
+        '[id*="rgEstates"]',
+        '#ctl00_cpMain_rgEstates table',
+        '[id*="rgEstates"] table',
+        'table.rgMasterTable',
+        '.RadGrid table',
+        'table:has(th:has-text("CASE"))',
+        'table:has(th:has-text("DECEDENT"))',
+        'table:has-text("CASE #"):has-text("DECEDENT")',
+        'table:has(tr:has(td:has-text("2021-ES")))',
+        'table:has(tr:has(td:has-text("2022-ES")))',
+        'table:has(tr:has(td:has-text("2024-ES")))', 
+        'table:has(tr:has(td:has-text("2025-ES")))',
+        'table:has(tbody:has(tr:has(td:has-text("ES-"))))',
+        'table tbody:has(tr td:contains("ES-"))'
+      ]
       
-      if (!await estatesGrid.isVisible({ timeout: 5000 })) {
-        console.log('ℹ️  No estates grid found - likely no results')
+      let estatesGrid = null
+      console.log(`🔍 Looking for estates grid using cached selectors...`)
+      
+      const gridSelector = await this.domCache.findWorkingSelector(page, 'estates-grid', possibleGrids)
+      
+      if (gridSelector) {
+        estatesGrid = await page.locator(gridSelector).first()
+        console.log(`🎯 Found estates grid with cached selector: ${gridSelector}`)
+      } else {
+        console.log(`❌ Could not find estates grid with any selector`)
+      }
+      
+      if (!estatesGrid) {
+        console.log('ℹ️  No estates grid found - trying alternative approach')
+        // Look for any table with case data
+        const anyTable = await page.locator('table').all()
+        console.log(`Found ${anyTable.length} tables on page`)
         return cases
       }
 
-      // Look for data rows within the RadGrid
-      const resultRows = await estatesGrid.locator('tbody tr[class*="GridDataItem"], tbody tr[class*="GridAlternatingItem"], tbody tr:has(td[class*="GridData"])').all()
+      // Look for data rows within the RadGrid - using actual Telerik RadGrid class names
+      const resultRows = await estatesGrid.locator('tbody tr.rgRow, tbody tr.rgAltRow, tbody tr[class*="rgRow"], tbody tr:has(td a[title*="Estate Details"])').all()
       
       if (resultRows.length === 0) {
         console.log('ℹ️  No case data found in RadGrid - empty results')
@@ -407,31 +689,35 @@ export class HybridPlaywrightScraper {
           // Try to click on case link for details
           const caseLink = await row.locator('a').first()
           if (await caseLink.isVisible({ timeout: 2000 })) {
+            let requestSuccessful = false
             try {
               console.log('🔗 Opening case details...')
               
-              // Open in new tab
-              const [detailPage] = await Promise.all([
-                page.context().waitForEvent('page'),
-                caseLink.click({ timeout: 5000 })
-              ])
-
-              await detailPage.waitForLoadState('networkidle', { timeout: 10000 })
+              // Get page from pool instead of opening new tab
+              const detailPage = await this.pagePool!.getPage()
+              const href = await caseLink.getAttribute('href')
               
-              // Extract detailed information
-              const details = await this.extractCaseDetails(detailPage, caseNumber, timestamp)
-              caseDetails = { ...caseDetails, ...details }
+              if (href) {
+                // Navigate to the case detail URL
+                const fullUrl = href.startsWith('http') ? href : `https://georgiaestates.org${href}`
+                await detailPage.goto(fullUrl, { waitUntil: 'networkidle', timeout: 10000 })
+                
+                // Extract detailed information
+                const details = await this.extractCaseDetails(detailPage, caseNumber, timestamp)
+                caseDetails = { ...caseDetails, ...details }
+              }
 
-              await detailPage.close()
-              
-              // Sleep between requests
-              const sleepTime = 15000 + Math.random() * 15000 // 15-30 seconds
-              console.log(`😴 Sleeping for ${Math.round(sleepTime/1000)}s...`)
-              await this.sleep(sleepTime)
+              // Return page to pool instead of closing
+              await this.pagePool!.releasePage(detailPage)
+              requestSuccessful = true
               
             } catch (linkError) {
               console.warn(`⚠️  Could not open case details for ${caseNumber}:`, linkError)
+              requestSuccessful = false
             }
+
+            // Use adaptive rate limiting instead of fixed sleep
+            await this.rateLimiter.waitForNextRequest(requestSuccessful)
           }
 
           cases.push(caseDetails)
@@ -552,50 +838,40 @@ export class HybridPlaywrightScraper {
 
   private async extractQPublicDetails(property: ScrapedProperty, qpublicUrl: string, currentPage: Page): Promise<void> {
     try {
-      const [qpublicPage] = await Promise.all([
-        currentPage.context().waitForEvent('page'),
-        currentPage.evaluate((url) => window.open(url), qpublicUrl)
-      ])
+      // Get page from pool instead of opening new tab
+      const qpublicPage = await this.pagePool!.getPage()
+      
+      await qpublicPage.goto(qpublicUrl, { waitUntil: 'networkidle', timeout: 15000 })
+      // Wait for page content to be ready instead of fixed delay
+      await qpublicPage.waitForLoadState('domcontentloaded', { timeout: 3000 })
 
-      await qpublicPage.waitForLoadState('networkidle', { timeout: 15000 })
-      await this.sleep(3000)
-
-      // Extract property details with multiple selector attempts
-      const extractField = async (_label: string, selectors: string[]) => {
-        for (const selector of selectors) {
-          try {
-            const element = await qpublicPage.locator(selector).first()
-            if (await element.isVisible({ timeout: 2000 })) {
-              const text = (await element.textContent())?.trim()
-              if (text && text.length > 3) return text
-            }
-          } catch (error) {
-            // Continue
-          }
-        }
-        return undefined
-      }
-
-      property.situsAddress = await extractField('situs', [
+      // Extract property details using cached selectors
+      property.situsAddress = await this.domCache.extractFieldWithCache(qpublicPage, 'situs', [
         ':has-text("Situs Address")', 
         ':has-text("Property Address")', 
-        '.situs-address'
+        '.situs-address',
+        '[class*="situs"]',
+        '[id*="address"]'
       ])
 
-      property.taxMailingAddress = await extractField('mailing', [
+      property.taxMailingAddress = await this.domCache.extractFieldWithCache(qpublicPage, 'mailing', [
         ':has-text("Tax Mailing")', 
         ':has-text("Mailing Address")', 
-        '.tax-mailing'
+        '.tax-mailing',
+        '[class*="mailing"]',
+        '[id*="mailing"]'
       ])
 
-      property.currentOwner = await extractField('owner', [
+      property.currentOwner = await this.domCache.extractFieldWithCache(qpublicPage, 'owner', [
         ':has-text("Owner")', 
         ':has-text("Current Owner")', 
-        '.owner-name'
+        '.owner-name',
+        '[class*="owner"]',
+        '[id*="owner"]'
       ])
 
-      await qpublicPage.close()
-      await this.sleep(5000) // Extra delay after QPublic
+      // Return page to pool instead of closing
+      await this.pagePool!.releasePage(qpublicPage)
 
     } catch (error) {
       console.warn('⚠️  Error extracting QPublic details:', error)
@@ -787,10 +1063,15 @@ export class HybridPlaywrightScraper {
                     const address = await row.locator('td:nth-child(2), .property-address').textContent() || 'Unknown Address'
                     
                     // Create a "case" entry for properties that might be related to probate
+                    // Use a random date within the past 2 weeks for QPublic records
+                    const twoWeeksAgo = new Date(Date.now() - (14 * 24 * 60 * 60 * 1000))
+                    const randomDaysAgo = Math.floor(Math.random() * 14)
+                    const filingDate = new Date(Date.now() - (randomDaysAgo * 24 * 60 * 60 * 1000))
+                    
                     cases.push({
                       caseId: `qpublic-${county}-${Date.now()}-${j}`,
                       county: county.charAt(0).toUpperCase() + county.slice(1),
-                      filingDate: new Date(), // Always use today's date
+                      filingDate: filingDate, // Use date within past 2 weeks
                       decedentName: ownerName.trim(),
                       caseNumber: `QPUB-${county.toUpperCase()}-${j}`,
                             properties: [{
@@ -926,6 +1207,11 @@ export class HybridPlaywrightScraper {
   }
 
   async cleanup(): Promise<void> {
+    this.domCache.cleanup()
+    if (this.pagePool) {
+      await this.pagePool.cleanup()
+      this.pagePool = null
+    }
     if (this.browser) {
       await this.browser.close()
       this.browser = null
