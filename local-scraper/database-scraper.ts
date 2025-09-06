@@ -16,8 +16,8 @@ const prisma = new PrismaClient()
 /**
  * Helper function to determine if a case should be saved based on filing date
  * Rules:
- * - Always save if filed today
- * - If not filed today, only save if filed year is 2025
+ * - ONLY save if filing date matches exactly today's date
+ * - Reject all cases that are not filed today
  */
 function shouldSaveCase(filedDate?: Date): boolean {
   if (!filedDate) return false
@@ -25,13 +25,8 @@ function shouldSaveCase(filedDate?: Date): boolean {
   const today = dayjs()
   const filed = dayjs(filedDate)
   
-  // Always save if filed today
-  if (filed.isSame(today, 'day')) {
-    return true
-  }
-  
-  // If not filed today, only save if filed year is 2025
-  return filed.year() === 2025
+  // Only save if filed today - exact date match required
+  return filed.isSame(today, 'day')
 }
 
 class DatabaseScraper extends HybridPlaywrightScraper {
@@ -50,9 +45,9 @@ class DatabaseScraper extends HybridPlaywrightScraper {
 
     try {
       for (const scrapedCase of cases) {
-        // Check if we should save this case based on filing date
+        // Check if we should save this case based on filing date (only today's date)
         if (!shouldSaveCase(scrapedCase.filingDate)) {
-          console.log(`⏭️  Case ${scrapedCase.caseId} doesn't match date criteria, skipping...`)
+          console.log(`⏭️  Case ${scrapedCase.caseId} not filed today, skipping...`)
           continue
         }
         
@@ -71,7 +66,7 @@ class DatabaseScraper extends HybridPlaywrightScraper {
           data: {
             caseId: scrapedCase.caseId,
             county: scrapedCase.county,
-            filingDate: scrapedCase.filingDate,
+            filingDate: new Date(), // Always use today's date
             decedentName: scrapedCase.decedentName,
             decedentAddress: scrapedCase.decedentAddress,
             estateValue: scrapedCase.estateValue ? parseFloat(scrapedCase.estateValue.toString()) : null,
