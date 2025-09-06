@@ -30,23 +30,8 @@ async function scrapeGeorgiaProbateRecords(): Promise<ScrapedCase[]> {
     const html = await response.text()
     
     // Basic HTML parsing (would need cheerio or similar for real parsing)
-    // For now, return mock data that looks real
-    const mockCases: ScrapedCase[] = [
-      {
-        caseId: `GP-${Date.now()}-001`,
-        county: 'Henry',
-        filingDate: new Date(),
-        decedentName: 'John Smith',
-        status: 'Active'
-      },
-      {
-        caseId: `GP-${Date.now()}-002`,
-        county: 'Clayton',
-        filingDate: new Date(),
-        decedentName: 'Mary Johnson',
-        status: 'Active'
-      }
-    ]
+    // No mock data - return empty results to avoid fake data
+    const mockCases: ScrapedCase[] = []
     
     console.log(`✅ Found ${mockCases.length} cases from Georgia Probate Records`)
     return mockCases
@@ -61,16 +46,8 @@ async function scrapeQPublicSite(county: string): Promise<ScrapedCase[]> {
   try {
     console.log(`🔍 Scraping QPublic ${county}...`)
     
-    // Simulate QPublic property records scraping
-    const mockCases: ScrapedCase[] = [
-      {
-        caseId: `QP-${county}-${Date.now()}`,
-        county: county,
-        filingDate: new Date(),
-        decedentName: `Property Owner ${county}`,
-        status: 'Current'
-      }
-    ]
+    // No mock data - return empty results to avoid fake data
+    const mockCases: ScrapedCase[] = []
     
     // Simulate processing time
     await new Promise(resolve => setTimeout(resolve, 2000))
@@ -95,14 +72,8 @@ export async function POST(request: Request) {
         results = await scrapeGeorgiaProbateRecords()
         break
       case 'cobb_probate':
-        // Would implement Cobb Probate Court scraping
-        results = [{
-          caseId: `CB-${Date.now()}`,
-          county: 'Cobb',
-          filingDate: new Date(),
-          decedentName: 'Cobb County Case',
-          status: 'Active'
-        }]
+        // Would implement Cobb Probate Court scraping - returning empty for now
+        results = []
         break
       case 'qpublic_cobb':
       case 'qpublic_dekalb':

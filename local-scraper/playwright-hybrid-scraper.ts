@@ -125,9 +125,33 @@ export class HybridPlaywrightScraper {
     
     try {
       console.log('🌐 Navigating to Georgia Probate Records...')
-      await page.goto('https://georgiaprobaterecords.com/Estates/SearchEstates.aspx', {
-        waitUntil: 'networkidle'
-      })
+      
+      // Try navigation with retries
+      let navigationSuccess = false
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          console.log(`📍 Navigation attempt ${attempt}/3...`)
+          await page.goto('https://georgiaprobaterecords.com/Estates/SearchEstates.aspx', {
+            waitUntil: 'domcontentloaded',
+            timeout: 30000
+          })
+          
+          // Wait for key elements to ensure page loaded
+          await page.waitForSelector('#ctl00_cpMain_ddlCounty', { timeout: 10000 })
+          navigationSuccess = true
+          console.log('✅ Successfully loaded Georgia Probate Records page')
+          break
+        } catch (navError) {
+          console.log(`⚠️ Navigation attempt ${attempt} failed:`, navError.message)
+          if (attempt < 3) {
+            await page.waitForTimeout(2000) // Wait 2 seconds before retry
+          }
+        }
+      }
+      
+      if (!navigationSuccess) {
+        throw new Error('Failed to navigate to Georgia Probate Records after 3 attempts')
+      }
 
       // Check for terms/conditions modal
       try {
@@ -155,7 +179,7 @@ export class HybridPlaywrightScraper {
       // Search for 2025 filed dates only (ignore death dates)
       const searchDate = dateFrom || new Date()
       const startDate = new Date('2025-01-01')  // Start from 2025
-      const endDate = new Date('2025-09-02')    // End at today
+      const endDate = dateFrom || new Date()    // End at search date or today
       
       const startDateStr = startDate.toLocaleDateString('en-US', { 
         month: '2-digit', 
@@ -171,7 +195,7 @@ export class HybridPlaywrightScraper {
       console.log(`📅 Searching for filings/deaths from ${startDateStr} to ${endDateStr}...`)
       
       // Try to select one of the target counties: Henry, Clayton, or Douglas
-      const targetCounties = ['Clayton', 'Douglas', 'Henry']
+      const targetCounties = ['Henry', 'Clayton', 'Douglas']
       let selectedCounty = null
       
       try {
